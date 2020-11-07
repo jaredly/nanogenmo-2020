@@ -1,13 +1,18 @@
 // ok
 
+import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
+
+const rng = new Prando(123);
+
 canvas.width = 800;
 canvas.height = 800;
 const ctx = canvas.getContext('2d');
+const treeSize = 700;
 
 const world = {
     tiles: [],
-    width: 50,
-    height: 50,
+    width: 100,
+    height: 100,
 };
 
 for (let y = 0; y < world.height; y++) {
@@ -27,15 +32,19 @@ const makeIsland = () => {
             const dy = y - cy;
             const d = Math.sqrt(dx * dx + dy * dy);
             if (d <= r) {
-                world.tiles[y][x] = { type: 'sand' };
+                if (r - d < beachSize) {
+                    world.tiles[y][x] = { type: 'sand' };
+                } else {
+                    world.tiles[y][x] = { type: 'dirt' };
+                }
             }
         });
     });
 };
 
 const randPos = () => {
-    const x = (Math.random() * world.width) | 0;
-    const y = (Math.random() * world.height) | 0;
+    const x = (rng.next() * world.width) | 0;
+    const y = (rng.next() * world.height) | 0;
     return { x, y };
 };
 
@@ -51,20 +60,108 @@ const findClose = (cx, cy, dist, type) => {
     }
 };
 
-const makeTree = () => {
-    const pos = randPos();
-    const tile = world.tiles[pos.y][pos.x];
-    if (tile.type === 'sand') {
-        const close = findClose(pos.x, pos.y, 2, 'water');
-        if (!close) {
-            tile.type = 'trees';
+const addPos = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
+const dist = ({ x, y }) => Math.sqrt(x * x + y * y);
+const diff = (a, b) => ({ x: b.x - a.x, y: b.y - a.y });
+const posKey = ({ x, y }) => `${x}:${y}`;
+const posEq = (a, b) => a.x === b.x && a.y === b.y;
+
+// const weights
+
+const chooseWeighted = (frontier) => {
+    const totalWeight = frontier.reduce((t, m) => t + m.weight, 0);
+    const d = rng.next() * totalWeight;
+    let at = 0;
+    for (let i = 0; i < frontier.length; i++) {
+        at += frontier[i].weight;
+        if (at > d) {
+            return i;
         }
     }
 };
 
+const weight = (pos, center) => 1 / Math.pow(dist(diff(pos, center)), 0.5);
+// const weight = (pos, center) => 1 / dist(diff(pos, center));
+// const weight = (pos, center) => 1;
+
+// TODO can I weight items based on distance to center? that would be good
+const randomGrowth = (center, count, add) => {
+    const dirs = [
+        [-1, -1],
+        [-1, 0],
+        [-1, 1],
+        [0, -1],
+        [0, 1],
+        [1, 1],
+        [1, 0],
+        [1, -1],
+    ].map(([x, y]) => ({ x, y }));
+    const seen = { [posKey(center)]: true };
+    const frontier = dirs.map((pos) => ({
+        pos: addPos(pos, center),
+        weight: weight(addPos(pos, center), center),
+    }));
+    for (let i = 0; i < count; i++) {
+        const d = chooseWeighted(frontier);
+        const chosen = frontier[d];
+        if (!chosen) {
+            continue;
+        }
+        seen[posKey(chosen.pos)] = true;
+        frontier.splice(d, 1);
+        if (add(chosen.pos)) {
+            const nf = dirs
+                .map((pos) => addPos(pos, chosen.pos))
+                .filter(
+                    (pos) =>
+                        !seen[posKey(pos)] &&
+                        !frontier.some((m) => posEq(m, pos)),
+                )
+                .map((pos) => ({ pos, weight: weight(pos, center) }));
+            frontier.push(...nf);
+        }
+    }
+};
+
+const beachSize = 4;
+
+const makeTrees = () => {
+    const pos = randPos();
+    const tile = world.tiles[pos.y][pos.x];
+    if (tile.type === 'dirt') {
+        tile.type = 'trees';
+        const close = findClose(pos.x, pos.y, beachSize, 'water');
+        if (!close) {
+            randomGrowth(pos, treeSize, (pos) => {
+                if (world.tiles[pos.y][pos.x].type !== 'dirt') {
+                    return false;
+                }
+                if (!findClose(pos.x, pos.y, beachSize, 'water')) {
+                    world.tiles[pos.y][pos.x] = { type: 'trees' };
+                    return true;
+                }
+                return false;
+            });
+        }
+    }
+};
+
+// const makeTree = () => {
+//     const pos = randPos();
+//     const tile = world.tiles[pos.y][pos.x];
+//     if (tile.type === 'sand') {
+//         const close = findClose(pos.x, pos.y, 4, 'water');
+//         if (!close) {
+//             tile.type = 'trees';
+//         }
+//     }
+// };
+
 const color = (tile) => {
     return (
-        { water: 'blue', sand: 'orange', trees: 'green' }[tile.type] || 'black'
+        { water: 'blue', sand: 'orange', trees: '#0a4a0a', dirt: '#9c572c' }[
+            tile.type
+        ] || 'black'
     );
 };
 
@@ -82,8 +179,8 @@ const draw = () => {
 
 makeIsland();
 
-for (let i = 0; i < 1000; i++) {
-    makeTree();
+for (let i = 0; i < 50; i++) {
+    makeTrees();
 }
 
 draw();
