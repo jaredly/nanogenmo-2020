@@ -125,43 +125,42 @@ const randomGrowth = (center, count, add) => {
 
 const beachSize = 4;
 
-const makeTrees = () => {
-    const pos = randPos();
-    const tile = world.tiles[pos.y][pos.x];
-    if (tile.type === 'dirt') {
-        tile.type = 'trees';
-        const close = findClose(pos.x, pos.y, beachSize, 'water');
-        if (!close) {
-            randomGrowth(pos, treeSize, (pos) => {
-                if (world.tiles[pos.y][pos.x].type !== 'dirt') {
-                    return false;
-                }
-                if (!findClose(pos.x, pos.y, beachSize, 'water')) {
-                    world.tiles[pos.y][pos.x] = { type: 'trees' };
-                    return true;
-                }
-                return false;
-            });
+const filteredRandPos = (filter, max = 10) => {
+    for (let i = 0; i < max; i++) {
+        const pos = randPos();
+        if (filter(pos)) {
+            return pos;
         }
     }
+    return null;
 };
 
-// const makeTree = () => {
-//     const pos = randPos();
-//     const tile = world.tiles[pos.y][pos.x];
-//     if (tile.type === 'sand') {
-//         const close = findClose(pos.x, pos.y, 4, 'water');
-//         if (!close) {
-//             tile.type = 'trees';
-//         }
-//     }
-// };
+const growTiles = (onType, tileType) => {
+    const pos = filteredRandPos(
+        (pos) => world.tiles[pos.y][pos.x].type === onType,
+    );
+    if (!pos) {
+        return;
+    }
+    world.tiles[pos.y][pos.x] = { type: tileType };
+    randomGrowth(pos, treeSize, (pos) => {
+        if (world.tiles[pos.y][pos.x].type !== 'dirt') {
+            return false;
+        }
+        world.tiles[pos.y][pos.x] = { type: tileType };
+        return true;
+    });
+};
 
 const color = (tile) => {
     return (
-        { water: 'blue', sand: 'orange', trees: '#0a4a0a', dirt: '#9c572c' }[
-            tile.type
-        ] || 'black'
+        {
+            water: 'blue',
+            sand: 'orange',
+            trees: '#0a4a0a',
+            dirt: '#9c572c',
+            rock: 'gray',
+        }[tile.type] || 'black'
     );
 };
 
@@ -179,8 +178,12 @@ const draw = () => {
 
 makeIsland();
 
-for (let i = 0; i < 50; i++) {
-    makeTrees();
+for (let i = 0; i < 12; i++) {
+    growTiles('dirt', 'trees');
+}
+
+for (let i = 0; i < 5; i++) {
+    growTiles('dirt', 'rock');
 }
 
 draw();
