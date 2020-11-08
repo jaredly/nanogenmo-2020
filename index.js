@@ -8,6 +8,7 @@ canvas.width = 800;
 canvas.height = 800;
 const ctx = canvas.getContext('2d');
 const treeSize = 700;
+const beachSize = 2;
 
 const world = {
     tiles: [],
@@ -123,8 +124,6 @@ const randomGrowth = (center, count, add) => {
     }
 };
 
-const beachSize = 4;
-
 const filteredRandPos = (filter, max = 10) => {
     for (let i = 0; i < max; i++) {
         const pos = randPos();
@@ -158,8 +157,10 @@ const color = (tile) => {
             water: 'blue',
             sand: 'orange',
             trees: '#0a4a0a',
+            grass: '#105a0a',
             dirt: '#9c572c',
             rock: 'gray',
+            iron: '#666',
         }[tile.type] || 'black'
     );
 };
@@ -185,5 +186,23 @@ for (let i = 0; i < 12; i++) {
 for (let i = 0; i < 5; i++) {
     growTiles('dirt', 'rock');
 }
+
+// Replace some dirt with grass
+world.tiles.forEach((row, y) => {
+    row.forEach((tile, x) => {
+        if (tile.type === 'dirt' && rng.next() > 0.3) {
+            world.tiles[y][x] = { type: 'grass' };
+        }
+    });
+});
+
+// Replace some of the rock with iron
+world.tiles.forEach((row, y) => {
+    row.forEach((tile, x) => {
+        if (tile.type === 'rock' && rng.next() > 0.8) {
+            world.tiles[y][x] = { type: 'iron' };
+        }
+    });
+});
 
 draw();
