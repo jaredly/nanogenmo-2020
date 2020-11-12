@@ -32,6 +32,44 @@ what is food
 What if I make it a turnbyturn text-based thing to start out, so I can get the feel for things?
 then I make an AI for it, and go to town. Seems reasonable?
 
+# Tiles can contain:
+
+Animals:
+- rabbits
+- boars
+- birds (& eggs)
+- snakes?
+- raccoons (might steal your food?)
+- owls?
+- mice? voles?
+
+Ground things:
+- rabbit warrens
+- boar nests I guess
+- snakes holes
+- rocks (might have to dig them up)
+- twigs
+- dead leaves (depending on the season?)
+- herbs
+- mushrooms
+- droppings of various animals
+- moss
+- lichen on rocks probably
+- streams! and rivers! hmm I need that in my map. water source is critical.
+- undergrowth. shrubs. ivys/vines.
+- roots
+
+Tree things:
+- birds nests
+- racoon dens (in holes in trees or fallen logs)
+- 
+
+^ things have "noticability factor", where some things are immediately obvious,
+and some things require you to be looking for it.
+if you have greater observantness, more things become obvious.
+this factor has a baseline by type of thing, but with some randomness thrown in to account for variability in how occluded a thing is.
+
+
 
 # V1
 different elevation, make it harder to travel up steep hills, need to know how to climb n stuff.

@@ -1,7 +1,16 @@
-const treeSize = 4700;
+import { addPos, dist, diff, posKey, posEq } from './utils.js';
+
 const beachSize = 2;
 
-export default (rng, width, height) => {
+export default (
+    rng,
+    width = 200,
+    height = 200,
+    rivers = 26,
+    trees = 12,
+    rocks = 5,
+    treeSize = 4700,
+) => {
     const world = {
         rng,
         tiles: [],
@@ -18,12 +27,12 @@ export default (rng, width, height) => {
 
     makeIsland(world);
 
-    for (let i = 0; i < 12; i++) {
-        growTiles(world, 'dirt', 'trees');
+    for (let i = 0; i < trees; i++) {
+        growTiles(world, treeSize, 'dirt', 'trees');
     }
 
-    for (let i = 0; i < 5; i++) {
-        growTiles(world, 'dirt', 'rock');
+    for (let i = 0; i < rocks; i++) {
+        growTiles(world, treeSize, 'dirt', 'rock');
     }
 
     // Replace some dirt with grass
@@ -44,8 +53,7 @@ export default (rng, width, height) => {
         });
     });
 
-    growRiver(world);
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < rivers; i++) {
         growRiver(world);
     }
 
@@ -89,12 +97,6 @@ const findClose = (cx, cy, dist, type) => {
         }
     }
 };
-
-const addPos = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
-const dist = ({ x, y }) => Math.sqrt(x * x + y * y);
-const diff = (a, b) => ({ x: b.x - a.x, y: b.y - a.y });
-const posKey = ({ x, y }) => `${x}:${y}`;
-const posEq = (a, b) => a.x === b.x && a.y === b.y;
 
 // const weights
 
@@ -162,6 +164,10 @@ const riverfy = (world, pos) => {
             .map((dir) => addPos(pos, dir))
             .filter(
                 (pos) =>
+                    pos.x >= 0 &&
+                    pos.x < world.width &&
+                    pos.y >= 0 &&
+                    pos.y < world.height &&
                     !['water', 'freshwater'].includes(
                         world.tiles[pos.y][pos.x].type,
                     ),
@@ -204,7 +210,7 @@ const growRiver = (world) => {
     riverfy(world, pos);
 };
 
-const growTiles = (world, onType, tileType) => {
+const growTiles = (world, treeSize, onType, tileType) => {
     const pos = filteredRandPos(
         world,
         (pos) => world.tiles[pos.y][pos.x].type === onType,
