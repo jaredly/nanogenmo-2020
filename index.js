@@ -1,7 +1,9 @@
 // ok
 
 import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
-import makeWorld from './world.js';
+import makeWorld, { filteredRandPos } from './world.js';
+import { Rabbit } from './animals.js';
+import { tileAt } from './utils.js';
 
 canvas.width = 800;
 canvas.height = 800;
@@ -48,8 +50,18 @@ const draw = () => {
     world.tiles.forEach((row, y) => {
         row.forEach((tile, x) => {
             ctx.fillStyle = color(tile);
+            ctx.globalAlpha = tile.type === 'grass' ? tile.grassHeight / 10 : 1;
             ctx.fillRect(x * wx, y * wy, wx, wy);
         });
+    });
+    world.actors.forEach((actor) => {
+        ctx.fillStyle = actor.isSleeping() ? 'black' : 'red';
+        ctx.fillRect(
+            (actor.pos.x + 0.2) * wx,
+            (actor.pos.y + 0.2) * wy,
+            wx * 0.6,
+            wy * 0.6,
+        );
     });
 };
 
@@ -57,4 +69,30 @@ const rng = new Prando(123);
 // Mini world!
 const world = makeWorld(rng, 50, 50, 5, 16, 2, 40);
 // const world = makeWorld(rng);
+
+const rabbitPos = filteredRandPos(
+    world,
+    (x) => tileAt(world, x).type === 'dirt',
+);
+world.actors.push(new Rabbit(5, 2, rabbitPos));
+
 draw();
+
+const step = (world, tick) => {
+    world.actors.forEach((actor) => actor.tick(world, tick));
+};
+
+setInterval(() => {
+    step(world, 1);
+    window.log.textContent = world.actors[0].tasks
+        .map((t) => t.constructor.name)
+        .join(', ');
+    // step(world, 1 / 10);
+    draw();
+}, 100);
+
+// for (let i = 0; i < 100; i++) {
+//     step(world, 1 / 10); // 6 minutes I guess?
+//     console.log(world.actors[0].tasks);
+//     console.log(world.actors[0].pos);
+// }

@@ -14,6 +14,7 @@ export default (
     const world = {
         rng,
         tiles: [],
+        actors: [],
         width,
         height,
     };
@@ -39,7 +40,7 @@ export default (
     world.tiles.forEach((row, y) => {
         row.forEach((tile, x) => {
             if (tile.type === 'dirt' && rng.next() > 0.3) {
-                world.tiles[y][x] = { type: 'grass' };
+                world.tiles[y][x] = { type: 'grass', grassHeight: 2 };
             }
         });
     });
@@ -116,7 +117,7 @@ const weight = (pos, center) => 1 / Math.pow(dist(diff(pos, center)), 0.5);
 // const weight = (pos, center) => 1 / dist(diff(pos, center));
 // const weight = (pos, center) => 1;
 
-const dirs = [
+export const dirs = [
     [-1, -1],
     [-1, 0],
     [-1, 1],
@@ -186,7 +187,7 @@ const riverfy = (world, pos) => {
     }
 };
 
-const filteredRandPos = (world, filter, max = 10) => {
+export const filteredRandPos = (world, filter, max = 10) => {
     for (let i = 0; i < max; i++) {
         const pos = randPos(world);
         if (filter(pos)) {
