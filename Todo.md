@@ -32,6 +32,16 @@ what is food
 What if I make it a turnbyturn text-based thing to start out, so I can get the feel for things?
 then I make an AI for it, and go to town. Seems reasonable?
 
+# Animal
+
+....
+
+(circadian rhythm?)
+mmmm
+
+probably won't sleep until evening.
+
+
 # Tiles can contain:
 
 Animals:

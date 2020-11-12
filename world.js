@@ -12,6 +12,7 @@ export default (
     treeSize = 4700,
 ) => {
     const world = {
+        totalSteps: 0,
         rng,
         tiles: [],
         actors: [],
@@ -40,7 +41,7 @@ export default (
     world.tiles.forEach((row, y) => {
         row.forEach((tile, x) => {
             if (tile.type === 'dirt' && rng.next() > 0.3) {
-                world.tiles[y][x] = { type: 'grass', grassHeight: 2 };
+                world.tiles[y][x] = { type: 'grass', grassHeight: 1000 };
             }
         });
     });
