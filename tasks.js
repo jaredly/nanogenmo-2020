@@ -5,7 +5,7 @@ if the return value is null, then we're done
 task = {fn, state}
 */
 import { dirs } from './world.js';
-import { addPos, validPos, tileAt, posEq } from './utils.js';
+import { addPos, validPos, tileAt, posEq, todayHours } from './utils.js';
 
 export const wait = (time) => ({
     name: 'wait',
@@ -18,7 +18,7 @@ export const wait = (time) => ({
     state: time,
 });
 
-export const eatGrass = () => ({
+export const eatGrass = (time) => ({
     name: 'eatGrass',
     fn: (world, actor, state) => {
         if (actor.hunger < 5) {
@@ -33,9 +33,9 @@ export const eatGrass = () => ({
         }
         tile.grassHeight -= 0.01;
         actor.hunger -= 1;
-        return state;
+        return time - 1;
     },
-    state: true,
+    state: time,
 });
 
 export const isTraversable = (tile) => tile.type !== 'water';
@@ -115,7 +115,14 @@ export const goHome = (world, actor) => goToPos(actor.home, actor.tileSpeed);
 export const sleep = () => ({
     name: 'sleep',
     fn: (world, actor, state) => {
-        if (actor.tiredness > 0) {
+        let thresh = 0;
+
+        const hours = todayHours(world);
+        if (hours > 6 && hours < 20) {
+            thresh = 60 * 60 * 3; // TODO fancier, ramp off oversleeping
+        }
+
+        if (actor.tiredness > thresh) {
             actor.tiredness -= 1;
             return state;
         }
