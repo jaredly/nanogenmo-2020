@@ -106,39 +106,58 @@ const rng = new Prando(123);
 const world = makeWorld(rng, 50, 50, 5, 16, 2, 40);
 // const world = makeWorld(rng);
 
-for (let i = 0; i < 20; i++) {
+for (let i = 0; i < 5; i++) {
     const rabbitPos = filteredRandPos(
         world,
         (x) => tileAt(world, x).type === 'dirt',
         30,
     );
     // world.actors.push(new Rabbit(5, 2, rabbitPos));
-    world.actors.push(rabbit(rabbitPos));
+    for (let r = 0; r < 5; r++) {
+        world.actors.push(rabbit(rabbitPos));
+    }
 }
 
 draw();
 
 const step = (world) => {
-    for (let i = 0; i < steps; i++) {
-        world.totalSteps += 1;
-        world.actors.forEach((actor) => tick(world, actor));
-    }
-    // world.actors.forEach((actor) => actor.tick(world, tick));
+    world.totalSteps += 1;
+    world.actors.forEach((actor) => tick(world, actor));
+    world.tiles.forEach((row) =>
+        row.forEach((tile) => {
+            if (tile.type === 'grass' && tile.grassHeight < 1000) {
+                tile.grassHeight += 0.001;
+            }
+        }),
+    );
 };
 
 const run = () => {
-    step(world, 1);
+    for (let i = 0; i < steps; i++) {
+        step(world);
+    }
     window.log.style.whiteSpace = 'pre';
 
     const days = world.totalSteps / DAY_SECONDS;
     const secondsToday = world.totalSteps % DAY_SECONDS;
     const hour = secondsToday / 3600;
 
+    let lowGrass = 0;
+    world.tiles.forEach((row) =>
+        row.forEach((tile) =>
+            tile.type === 'grass' && tile.grassHeight < 200
+                ? (lowGrass += 1)
+                : null,
+        ),
+    );
+
     window.log.textContent = `
     Time: ${parseInt(days)} days ${parseInt(hour * 10) / 10} hours
     ${JSON.stringify(world.actors[0].task)}
     ${parseInt(world.actors[0].hunger / 360) / 10} hours hungry
     ${parseInt(world.actors[0].tiredness / 360) / 10} hours tired
+
+    Grass tiles with under 20%: ${lowGrass}
     `;
     draw();
 };

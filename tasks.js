@@ -58,7 +58,7 @@ export const foodNeighbor = (world, pos) => {
                 tileAt(world, b).grassHeight - tileAt(world, a).grassHeight,
         );
     if (grass.length) {
-        return grass[0];
+        return grass[parseInt(world.rng.next() * grass.length)];
     } else {
         // console.log('no rgass neighbors', neighbors);
         return neighbors[parseInt(world.rng.next() * neighbors.length)];
