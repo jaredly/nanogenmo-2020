@@ -1,154 +1,96 @@
 // ok
 
 import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
-
-const rng = new Prando(123);
+import makeWorld from './world.js';
 
 canvas.width = 800;
 canvas.height = 800;
 const ctx = canvas.getContext('2d');
-const treeSize = 700;
-const beachSize = 2;
 
-const world = {
-    tiles: [],
-    width: 100,
-    height: 100,
-};
+/*
 
-for (let y = 0; y < world.height; y++) {
-    world.tiles.push([]);
-    for (let x = 0; x < world.width; x++) {
-        world.tiles[y].push({ type: 'water' });
-    }
-}
+a tile can have things there.
+you can move things from one place to another.
+if it's not nailed down, you can pick it up.
 
-const makeIsland = () => {
-    const cx = world.width / 2;
-    const cy = world.height / 2;
-    const r = world.width * 0.455;
-    world.tiles.forEach((row, y) => {
-        row.forEach((tile, x) => {
-            const dx = x - cx;
-            const dy = y - cy;
-            const d = Math.sqrt(dx * dx + dy * dy);
-            if (d <= r) {
-                if (r - d < beachSize) {
-                    world.tiles[y][x] = { type: 'sand' };
-                } else {
-                    world.tiles[y][x] = { type: 'dirt' };
-                }
-            }
-        });
-    });
-};
+Animals:
+- rabbits
+- boars
+- birds (& eggs)
+- snakes?
+- raccoons (might steal your food?)
+- owls?
+- mice? voles?
 
-const randPos = () => {
-    const x = (rng.next() * world.width) | 0;
-    const y = (rng.next() * world.height) | 0;
-    return { x, y };
-};
+Ground things:
+- rabbit warrens
+- boar nests I guess
+- snakes holes
+- rocks (might have to dig them up)
+- twigs
+- dead leaves (depending on the season?)
+- herbs
+- mushrooms
+- droppings of various animals
+- moss
+- lichen on rocks probably
+- streams! and rivers! hmm I need that in my map. water source is critical.
+- undergrowth. shrubs. ivys/vines.
+- roots
 
-const findClose = (cx, cy, dist, type) => {
-    for (let x = (cx - dist) | 0; x < cx + dist; x++) {
-        for (let y = (cy - dist) | 0; y < cy + dist; y++) {
-            if (x >= 0 && x < world.width && y >= 0 && y < world.height) {
-                if (world.tiles[y][x].type === type) {
-                    return { x, y };
-                }
-            }
-        }
-    }
-};
+Tree things:
+- birds nests
+- racoon dens (in holes in trees or fallen logs)
+- 
 
-const addPos = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
-const dist = ({ x, y }) => Math.sqrt(x * x + y * y);
-const diff = (a, b) => ({ x: b.x - a.x, y: b.y - a.y });
-const posKey = ({ x, y }) => `${x}:${y}`;
-const posEq = (a, b) => a.x === b.x && a.y === b.y;
+^ things have "noticability factor", where some things are immediately obvious,
+and some things require you to be looking for it.
+if you have greater observantness, more things become obvious.
+this factor has a baseline by type of thing, but with some randomness thrown in to account for variability in how occluded a thing is.
 
-// const weights
 
-const chooseWeighted = (frontier) => {
-    const totalWeight = frontier.reduce((t, m) => t + m.weight, 0);
-    const d = rng.next() * totalWeight;
-    let at = 0;
-    for (let i = 0; i < frontier.length; i++) {
-        at += frontier[i].weight;
-        if (at > d) {
-            return i;
-        }
-    }
-};
 
-const weight = (pos, center) => 1 / Math.pow(dist(diff(pos, center)), 0.5);
-// const weight = (pos, center) => 1 / dist(diff(pos, center));
-// const weight = (pos, center) => 1;
 
-// TODO can I weight items based on distance to center? that would be good
-const randomGrowth = (center, count, add) => {
-    const dirs = [
-        [-1, -1],
-        [-1, 0],
-        [-1, 1],
-        [0, -1],
-        [0, 1],
-        [1, 1],
-        [1, 0],
-        [1, -1],
-    ].map(([x, y]) => ({ x, y }));
-    const seen = { [posKey(center)]: true };
-    const frontier = dirs.map((pos) => ({
-        pos: addPos(pos, center),
-        weight: weight(addPos(pos, center), center),
-    }));
-    for (let i = 0; i < count; i++) {
-        const d = chooseWeighted(frontier);
-        const chosen = frontier[d];
-        if (!chosen) {
-            continue;
-        }
-        seen[posKey(chosen.pos)] = true;
-        frontier.splice(d, 1);
-        if (add(chosen.pos)) {
-            const nf = dirs
-                .map((pos) => addPos(pos, chosen.pos))
-                .filter(
-                    (pos) =>
-                        !seen[posKey(pos)] &&
-                        !frontier.some((m) => posEq(m, pos)),
-                )
-                .map((pos) => ({ pos, weight: weight(pos, center) }));
-            frontier.push(...nf);
-        }
-    }
-};
+*/
 
-const filteredRandPos = (filter, max = 10) => {
-    for (let i = 0; i < max; i++) {
-        const pos = randPos();
-        if (filter(pos)) {
-            return pos;
-        }
-    }
-    return null;
-};
-
-const growTiles = (onType, tileType) => {
-    const pos = filteredRandPos(
-        (pos) => world.tiles[pos.y][pos.x].type === onType,
-    );
-    if (!pos) {
-        return;
-    }
-    world.tiles[pos.y][pos.x] = { type: tileType };
-    randomGrowth(pos, treeSize, (pos) => {
-        if (world.tiles[pos.y][pos.x].type !== 'dirt') {
-            return false;
-        }
-        world.tiles[pos.y][pos.x] = { type: tileType };
-        return true;
-    });
+const person = {
+    vitals: {
+        injuries: {
+            legs: null,
+            arms: null,
+            torso: null,
+            head: null,
+        },
+        hunger: 0, // is this the right way to represent it?
+        thirst: 0, // maybe it should be "how much food is in you"? or something
+        tiredness: 0, // hmmmm
+        energy: 100, // this is connected to tiredness, but not exactly the same.
+        // but maybe for simplicity I'll just go with energy?
+        // well, energy can replenish with resting, but tiredness can only reset with sleep.
+    },
+    attributes: {
+        // determines how much weight you can carry
+        strength: 0.5,
+        // and how fast you can run (ability to escape from predators maybe?)
+        speed: 0.5,
+        agility: 0.5,
+        // impacts how much energy is expended by doing things.
+        fitness: 0.5,
+        // likelihood of noticing details
+        observantness: 0.5, // attentiveness?
+        // ease of inventing tools
+        inventiveness: 0.5,
+        // how well can you remember where things are in relation to you // maybe "spatial reasoning" is the thing.
+        mappingskill: 0.5,
+        // how long you deliberate?
+        impulsiveness: 0.5,
+        curiousity: 0.5,
+        // how much risk you are willing to take
+        // e.g. "how close to dusk you're willing to stay out", among other things probably
+        riskTolerance: 0.5,
+    },
+    weight: 130,
+    height: 70.5,
 };
 
 const color = (tile) => {
@@ -160,6 +102,7 @@ const color = (tile) => {
             grass: '#105a0a',
             dirt: '#9c572c',
             rock: 'gray',
+            freshwater: '#05f',
             iron: '#666',
         }[tile.type] || 'black'
     );
@@ -177,32 +120,6 @@ const draw = () => {
     });
 };
 
-makeIsland();
-
-for (let i = 0; i < 12; i++) {
-    growTiles('dirt', 'trees');
-}
-
-for (let i = 0; i < 5; i++) {
-    growTiles('dirt', 'rock');
-}
-
-// Replace some dirt with grass
-world.tiles.forEach((row, y) => {
-    row.forEach((tile, x) => {
-        if (tile.type === 'dirt' && rng.next() > 0.3) {
-            world.tiles[y][x] = { type: 'grass' };
-        }
-    });
-});
-
-// Replace some of the rock with iron
-world.tiles.forEach((row, y) => {
-    row.forEach((tile, x) => {
-        if (tile.type === 'rock' && rng.next() > 0.8) {
-            world.tiles[y][x] = { type: 'iron' };
-        }
-    });
-});
-
+const rng = new Prando(123);
+const world = makeWorld(rng, 200, 200);
 draw();

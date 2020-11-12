@@ -18,3 +18,20 @@ Environment:
     clearings probably
     spring & a stream going out to the ocean
 
+
+# Person
+
+knowledge about tiles, and how to get there
+knowledge about what kinds of ground exist
+and what kinds of ground are good for sleeping on
+
+and then there's food
+what is food
+
+# Umm turn by turn text based?
+What if I make it a turnbyturn text-based thing to start out, so I can get the feel for things?
+then I make an AI for it, and go to town. Seems reasonable?
+
+
+# V1
+different elevation, make it harder to travel up steep hills, need to know how to climb n stuff.
