@@ -69,10 +69,11 @@ export const rabbit = (pos) => ({
                     ) {
                         console.log('pregnant!');
                         actor.lastPregnancy = 0;
-                        actor.pregnancy = {
-                            time: DAY_SECONDS * (28 + world.rng.next() * 5),
-                            size: parseInt(3 + world.rng.next() * 11),
-                        };
+                        // actor.pregnancy = {
+                        //     time: DAY_SECONDS * (28 + world.rng.next() * 5),
+                        //     // size: parseInt(3 + world.rng.next() * 11),
+                        //     size: 2,
+                        // };
                     }
                 }
 

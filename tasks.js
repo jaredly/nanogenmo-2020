@@ -50,7 +50,8 @@ export const eatGrass = (time) => ({
     state: time,
 });
 
-export const isTraversable = (tile) => tile.type !== 'water';
+export const isTraversable = (tile) =>
+    tile.type !== 'water' && tile.type !== 'freshwater';
 export const isValidFoodTile = (tile) =>
     tile.type === 'grass' && tile.grassHeight > 200;
 
