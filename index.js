@@ -157,6 +157,8 @@ const run = () => {
     ${parseInt(world.actors[0].hunger / 360) / 10} hours hungry
     ${parseInt(world.actors[0].tiredness / 360) / 10} hours tired
 
+    ${world.actors.length} rabbits
+
     Grass tiles with under 20%: ${lowGrass}
     `;
     draw();

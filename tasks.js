@@ -6,6 +6,7 @@ task = {fn, state}
 */
 import { dirs } from './world.js';
 import { addPos, validPos, tileAt, posEq, todayHours } from './utils.js';
+import { rabbit } from './animals.js';
 
 export const wait = (time) => ({
     name: 'wait',
@@ -16,6 +17,17 @@ export const wait = (time) => ({
         return state - 1;
     },
     state: time,
+});
+
+export const giveBirth = (duration) => ({
+    name: 'giveBirth',
+    fn: (world, actor, state) => {
+        if (state > 0) {
+            return state - 1;
+        }
+        world.actors.push(rabbit(actor.pos));
+    },
+    state: duration,
 });
 
 export const eatGrass = (time) => ({
@@ -40,7 +52,7 @@ export const eatGrass = (time) => ({
 
 export const isTraversable = (tile) => tile.type !== 'water';
 export const isValidFoodTile = (tile) =>
-    tile.type === 'grass' && tile.grassHeight > 1;
+    tile.type === 'grass' && tile.grassHeight > 200;
 
 export const foodNeighbor = (world, pos) => {
     const neighbors = dirs

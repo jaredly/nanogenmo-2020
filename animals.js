@@ -8,6 +8,7 @@ import {
     sleep,
     isTraversable,
     eatGrass,
+    giveBirth,
 } from './tasks.js';
 import { tileAt, posEq, todayHours } from './utils.js';
 
@@ -18,9 +19,14 @@ const animalTick = (world, actor) => {
     if (!actor.task || actor.task.name !== 'sleep') {
         actor.tiredness += 0.5;
     }
+    actor.lastPregnancy += 1;
+    if (actor.pregnancy) {
+        actor.pregnancy.time -= 1;
+    }
 };
 
 export const animal = (pos) => ({
+    id: Math.random().toString(36).slice(2),
     tileSpeed: 20,
     hunger: 100,
     tiredness: 0,
@@ -29,9 +35,13 @@ export const animal = (pos) => ({
     task: null,
     nextTask: (world, actor) => wait(3600),
     tick: animalTick,
+    lastPregnancy: 0,
+    lastPregnancyCheck: 0,
+    pregnancy: null,
+    age: 60 * 60 * 24 * 30 * 3, // 3 months old I guess
 });
 
-// const
+const DAY_SECONDS = 60 * 60 * 24;
 
 export const rabbit = (pos) => ({
     ...animal(pos),
@@ -45,8 +55,27 @@ export const rabbit = (pos) => ({
         const hour = todayHours(world);
 
         if (hour > 20 || hour < 6) {
-            // return sleep();
             if (posEq(actor.pos, actor.home)) {
+                if (actor.pregnancy && actor.pregnancy.time <= 0) {
+                    return giveBirth(world.rng.next() * 60 * 5 + 60 * 30);
+                }
+                if (world.totalSteps - actor.lastPregnancyCheck > DAY_SECONDS) {
+                    actor.lastPregnancyCheck = world.totalSteps;
+                    // this should check only once per day
+                    if (
+                        actor.pregnancy == null &&
+                        actor.lastPregnancy > DAY_SECONDS * 10 && // wait 30 days since last
+                        world.rng.next() < 0.02
+                    ) {
+                        console.log('pregnant!');
+                        actor.lastPregnancy = 0;
+                        actor.pregnancy = {
+                            time: DAY_SECONDS * (28 + world.rng.next() * 5),
+                            size: parseInt(3 + world.rng.next() * 11),
+                        };
+                    }
+                }
+
                 return sleep();
             } else {
                 return goHome(world, actor);
