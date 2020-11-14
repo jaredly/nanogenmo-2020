@@ -109,6 +109,7 @@ export const goToPos = (pos, time) => ({
         if (state.time > 0) {
             return { ...state, time: state.time - 1 };
         }
+        actor.hunger += state.walkTime * 200;
         const next = nextPos(actor.pos, state.pos);
         actor.pos = next;
         if (posEq(next, state.pos)) {

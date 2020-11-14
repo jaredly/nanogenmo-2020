@@ -3,6 +3,8 @@
 - rabbits
     - [x] birth
     - [ ] death from hunger.... (track BMI, based on number of calories you get per day. eating short grass is harder than long grass probably? that might be hard to do)
+    - [ ] hmm it's not quite working. maybe I need to make traveling more expensive?
+          what if, the farther you go, the more your hunger goes up?
     - [ ] maybe going to found new warrens? how to coordinate with others? maybe just "if you come across another warren, with fewer inhabitants, then join it with some probability"
 
 

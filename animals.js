@@ -75,6 +75,18 @@ export const rabbit = (pos) => ({
             if (actor.foodConsumed.length > 5) {
                 actor.foodConsumed.splice(5, actor.foodConsumed.length - 5);
             }
+
+            if (actor.hunger > DAY_SECONDS) {
+                console.log('dead', actor.id);
+                const idx = world.actors.indexOf(actor);
+                if (idx !== -1) {
+                    world.actors.splice(idx, 1);
+                }
+            }
+
+            if (actor.hunger > DAY_SECONDS / 2 && actor.pregnancy) {
+                actor.pregnany = null;
+            }
         }
     },
     nextTask: (world, actor) => {
@@ -104,14 +116,6 @@ export const rabbit = (pos) => ({
                             // size: parseInt(3 + world.rng.next() * 11),
                             size: 2,
                         };
-                    }
-                }
-
-                if (actor.hunger > DAY_SECONDS) {
-                    console.log('dead', actor.id);
-                    const idx = world.actors.indexOf(actor);
-                    if (idx !== -1) {
-                        world.actors.splice(idx, 1);
                     }
                 }
 
