@@ -57,6 +57,7 @@ export const animal = (pos) => ({
     lastPregnancyCheck: 0,
     pregnancy: null,
     foodConsumed: [0],
+    midnightHunger: [0, 0, 0, 0, 0],
     age: 60 * 60 * 24 * 30 * 3, // 3 months old I guess
 });
 
@@ -70,19 +71,28 @@ export const rabbit = (pos) => ({
 
         // top of the day
         if (world.totalSteps % DAY_SECONDS === 0) {
-            console.log('day');
             actor.foodConsumed.splice(0, 0, 0);
             if (actor.foodConsumed.length > 5) {
                 actor.foodConsumed.splice(5, actor.foodConsumed.length - 5);
             }
 
-            if (actor.hunger > DAY_SECONDS) {
+            actor.midnightHunger.shift();
+            actor.midnightHunger.push(actor.hunger);
+
+            if (actor.midnightHunger.every((h) => h > DAY_SECONDS)) {
                 console.log('dead', actor.id);
                 const idx = world.actors.indexOf(actor);
                 if (idx !== -1) {
                     world.actors.splice(idx, 1);
                 }
             }
+            // if (actor.hunger > DAY_SECONDS) {
+            //     console.log('dead', actor.id);
+            //     const idx = world.actors.indexOf(actor);
+            //     if (idx !== -1) {
+            //         world.actors.splice(idx, 1);
+            //     }
+            // }
 
             if (actor.hunger > DAY_SECONDS / 2 && actor.pregnancy) {
                 actor.pregnany = null;

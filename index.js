@@ -167,7 +167,7 @@ const run = () => {
         .join(' : ')}
 
     ${world.actors
-        .map((actor) => actor.foodConsumed.map((x) => x.toString()).join(' '))
+        .map((actor) => actor.midnightHunger.map((x) => x.toString()).join(' '))
         .join('\n')}
     `;
     draw();
