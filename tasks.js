@@ -119,6 +119,97 @@ export const goToPos = (pos, time) => ({
     },
 });
 
+const goUntil = (inner, cond) => ({
+    state: inner(),
+    name: 'goUntil',
+    fn: (world, actor, state) => {
+        const newState = state.fn(world, actor, state.state);
+        if (newState == null) {
+            if (cond(world, actor)) {
+                return null;
+            }
+            return inner();
+        } else {
+            state.state = newState;
+            return state;
+        }
+    },
+});
+
+const sequence = (items) => ({
+    state: items,
+    name: 'sequence',
+    fn: (world, actor, state) => {
+        const newState = state[0].fn(world, actor, state[0].state);
+        if (newState == null) {
+            state.shift();
+            if (state.length === 0) {
+                console.log('done with sequence!');
+                return null;
+            }
+        } else {
+            state[0].state = newState;
+        }
+        return state;
+    },
+});
+
+const randomNeighbor = (world, pos) => {
+    const neighbors = dirs
+        .map((dir) => addPos(pos, dir))
+        .filter((pos) => validPos(world, pos))
+        .filter((pos) => isTraversable(tileAt(world, pos)));
+    if (!neighbors.length) {
+        console.log('No neighbors', pos);
+        return null;
+    }
+    return neighbors[parseInt(world.rng.next() * neighbors.length)];
+};
+
+export const randomWalk = (count) => ({
+    state: { current: null, count },
+    name: 'randomWalk',
+    fn: (world, actor, state) => {
+        if (!state.current) {
+            if (state.count === 0) {
+                return null;
+            }
+            return {
+                current: goToPos(
+                    randomNeighbor(world, actor.pos),
+                    actor.tileSpeed,
+                ),
+                count: state.count,
+            };
+        }
+        const newState = state.current.fn(world, actor, state.current.state);
+        if (newState == null) {
+            return { current: null, count: state.count - 1 };
+        }
+        state.current.state = newState;
+        return state;
+    },
+});
+
+export const foundWarren = (world, actor) => {
+    return sequence([
+        randomWalk(40),
+        goUntil(
+            () => lookForFood(world, actor),
+            (world, actor) => tileAt(world, actor.pos).type === 'grass',
+        ),
+        {
+            state: null,
+            name: 'foundWarren',
+            fn: (world, actor, state) => {
+                console.log('founded yall', actor.pos, actor.home);
+                actor.home = actor.pos;
+                return null;
+            },
+        },
+    ]);
+};
+
 export const lookForFood = (world, actor) => {
     const neighbor = foodNeighbor(world, actor.pos);
     if (!neighbor) return null;

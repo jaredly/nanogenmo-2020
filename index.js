@@ -112,7 +112,6 @@ for (let i = 0; i < 5; i++) {
         (x) => tileAt(world, x).type === 'dirt',
         30,
     );
-    // world.actors.push(new Rabbit(5, 2, rabbitPos));
     for (let r = 0; r < 5; r++) {
         world.actors.push(rabbit(rabbitPos));
     }

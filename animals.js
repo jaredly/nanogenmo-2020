@@ -9,6 +9,7 @@ import {
     isTraversable,
     eatGrass,
     giveBirth,
+    foundWarren,
 } from './tasks.js';
 import { tileAt, posEq, todayHours } from './utils.js';
 
@@ -134,6 +135,13 @@ export const rabbit = (pos) => ({
                 return goHome(world, actor);
             }
         }
+
+        // maybe found a warren?
+        // STOPSHIP tweak this.
+        // if (world.rng.next() < 0.0001) {
+        //     console.log('found a warren pls');
+        //     return foundWarren(world, actor);
+        // }
 
         if (actor.hunger > 60 * 5) {
             if (isValidFoodTile(tile)) {
