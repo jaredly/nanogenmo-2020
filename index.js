@@ -137,6 +137,7 @@ const run = () => {
         step(world);
     }
     window.log.style.whiteSpace = 'pre';
+    window.log.style.fontFamily = 'monospace';
 
     const days = world.totalSteps / DAY_SECONDS;
     const secondsToday = world.totalSteps % DAY_SECONDS;
@@ -160,6 +161,14 @@ const run = () => {
     ${world.actors.length} rabbits
 
     Grass tiles with under 20%: ${lowGrass}
+
+    ${world.actors
+        .map((actor) => actor.hunger.toString().padStart(5))
+        .join(' : ')}
+
+    ${world.actors
+        .map((actor) => actor.foodConsumed.map((x) => x.toString()).join(' '))
+        .join('\n')}
     `;
     draw();
 };

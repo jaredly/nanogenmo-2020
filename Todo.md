@@ -1,3 +1,15 @@
+# Running list
+
+- rabbits
+    - [x] birth
+    - [ ] death from hunger.... (track BMI, based on number of calories you get per day. eating short grass is harder than long grass probably? that might be hard to do)
+    - [ ] maybe going to found new warrens? how to coordinate with others? maybe just "if you come across another warren, with fewer inhabitants, then join it with some probability"
+
+
+
+
+
+
 # V0
 
 Person:

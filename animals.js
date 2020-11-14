@@ -25,6 +25,24 @@ const animalTick = (world, actor) => {
     }
 };
 
+/*
+
+Ok, so we need some way of tracking the "health" of the animal.
+Here only thinking about nutritional health.
+
+after some threshhold, rabbits can't get enough food.
+
+Instead of "hunger"
+what if we talked about "how full the stomach is"?
+And then we have BMI?
+where a certain amount of food is required to maintain BMI
+once you get below a certain BMI you can't walk as far.
+maybe that's where "energy" comes in?
+say, a rabbit has enough energy to go 5 blocks comfortably.
+if they need to go more, it will wear them down? idk.
+
+*/
+
 export const animal = (pos) => ({
     id: Math.random().toString(36).slice(2),
     tileSpeed: 20,
@@ -38,6 +56,7 @@ export const animal = (pos) => ({
     lastPregnancy: 0,
     lastPregnancyCheck: 0,
     pregnancy: null,
+    foodConsumed: [0],
     age: 60 * 60 * 24 * 30 * 3, // 3 months old I guess
 });
 
@@ -48,6 +67,15 @@ export const rabbit = (pos) => ({
     tileSpeed: 30,
     tick: (world, actor) => {
         animalTick(world, actor);
+
+        // top of the day
+        if (world.totalSteps % DAY_SECONDS === 0) {
+            console.log('day');
+            actor.foodConsumed.splice(0, 0, 0);
+            if (actor.foodConsumed.length > 5) {
+                actor.foodConsumed.splice(5, actor.foodConsumed.length - 5);
+            }
+        }
     },
     nextTask: (world, actor) => {
         const tile = tileAt(world, actor.pos);
@@ -64,16 +92,26 @@ export const rabbit = (pos) => ({
                     // this should check only once per day
                     if (
                         actor.pregnancy == null &&
+                        // actor.lastPregnancy > DAY_SECONDS * 10 && // wait 30 days since last
                         actor.lastPregnancy > DAY_SECONDS * 10 && // wait 30 days since last
                         world.rng.next() < 0.02
                     ) {
-                        console.log('pregnant!');
+                        // console.log('pregnant!');
                         actor.lastPregnancy = 0;
-                        // actor.pregnancy = {
-                        //     time: DAY_SECONDS * (28 + world.rng.next() * 5),
-                        //     // size: parseInt(3 + world.rng.next() * 11),
-                        //     size: 2,
-                        // };
+                        actor.pregnancy = {
+                            time: DAY_SECONDS * (5 + world.rng.next() * 5),
+                            // time: DAY_SECONDS * (28 + world.rng.next() * 5),
+                            // size: parseInt(3 + world.rng.next() * 11),
+                            size: 2,
+                        };
+                    }
+                }
+
+                if (actor.hunger > DAY_SECONDS) {
+                    console.log('dead', actor.id);
+                    const idx = world.actors.indexOf(actor);
+                    if (idx !== -1) {
+                        world.actors.splice(idx, 1);
                     }
                 }
 

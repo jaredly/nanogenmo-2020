@@ -45,6 +45,7 @@ export const eatGrass = (time) => ({
         }
         tile.grassHeight -= 0.01;
         actor.hunger -= 1;
+        actor.foodConsumed[0] += 1;
         return time - 1;
     },
     state: time,
