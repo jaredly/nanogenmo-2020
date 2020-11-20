@@ -179,6 +179,9 @@ const run = () => {
 
     Grass tiles with under 20%: ${lowGrass}
 
+    ${world.actors.filter((a) => a.pregnancy != null).length} pregnant
+
+    ${world.died} died
     `;
     // ${world.actors
     //     .map((actor) => actor.hunger.toString().padStart(5))

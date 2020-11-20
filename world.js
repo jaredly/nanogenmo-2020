@@ -20,6 +20,7 @@ export default (
 ) => {
     const world = {
         totalSteps: 0,
+        died: 0,
         rng,
         tiles: [],
         actors: [],

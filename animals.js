@@ -67,8 +67,12 @@ export const animal = (pos) => ({
 const DAY_SECONDS = 60 * 60 * 24;
 
 const MIN_REPRODUCTION_AGE = 60 * 60 * 24 * 30 * 5;
+// const MIN_REPRODUCTION_AGE = 0;
 const LABOR_TIME = 60 * 30;
 const DAYS_BETWEEN_PREGNANCY = 30;
+// const DAYS_BETWEEN_PREGNANCY = 5;
+const GESTATION_PERIOD = 28;
+// const GESTATION_PERIOD = 5;
 
 export const rabbit = (pos) => ({
     ...animal(pos),
@@ -90,23 +94,17 @@ export const rabbit = (pos) => ({
             actor.midnightHunger.shift();
             actor.midnightHunger.push(actor.hunger);
 
-            if (actor.midnightHunger.every((h) => h > DAY_SECONDS)) {
+            if (actor.midnightHunger.every((h) => h > DAY_SECONDS * 0.2)) {
                 console.log('dead', actor.id);
                 const idx = world.actors.indexOf(actor);
                 if (idx !== -1) {
                     world.actors.splice(idx, 1);
+                    world.died += 1;
                 }
             }
-            // if (actor.hunger > DAY_SECONDS) {
-            //     console.log('dead', actor.id);
-            //     const idx = world.actors.indexOf(actor);
-            //     if (idx !== -1) {
-            //         world.actors.splice(idx, 1);
-            //     }
-            // }
 
-            if (actor.hunger > DAY_SECONDS / 2 && actor.pregnancy) {
-                actor.pregnany = null;
+            if (actor.hunger > DAY_SECONDS * 0.2 && actor.pregnancy) {
+                actor.pregnancy = null;
             }
         }
     },
@@ -134,7 +132,9 @@ export const rabbit = (pos) => ({
                         // console.log('pregnant!');
                         actor.lastPregnancy = 0;
                         actor.pregnancy = {
-                            time: DAY_SECONDS * (28 + world.rng.next() * 5),
+                            time:
+                                DAY_SECONDS *
+                                (GESTATION_PERIOD + world.rng.next() * 5),
                             // time: DAY_SECONDS * (28 + world.rng.next() * 5),
                             // size: parseInt(3 + world.rng.next() * 11),
                             size: 2,
@@ -155,7 +155,7 @@ export const rabbit = (pos) => ({
         //     return foundWarren(world, actor);
         // }
 
-        if (actor.hunger > 60 * 5) {
+        if (actor.hunger > 60 * 5 * 0.5) {
             if (isValidFoodTile(tile)) {
                 return eatGrass(60 * 5 + 60 * world.rng.next());
             } else {
