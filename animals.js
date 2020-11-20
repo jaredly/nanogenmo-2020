@@ -45,7 +45,7 @@ if they need to go more, it will wear them down? idk.
 
 */
 
-export const animal = (pos) => ({
+export const animal = (pos, world) => ({
     id: Math.random().toString(36).slice(2),
     tileSpeed: 20,
     hunger: 100,
@@ -61,7 +61,7 @@ export const animal = (pos) => ({
     pregnancy: null,
     foodConsumed: [0],
     midnightHunger: [0, 0, 0, 0, 0],
-    age: 60 * 60 * 24 * 30 * 3, // 3 months old I guess
+    age: 60 * 60 * 24 * 30 * (1 + world.rng.next() * 4), // 3 months old I guess
 });
 
 const DAY_SECONDS = 60 * 60 * 24;
