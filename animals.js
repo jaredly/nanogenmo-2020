@@ -15,7 +15,7 @@ import { tileAt, posEq, todayHours } from './utils.js';
 
 const animalTick = (world, actor) => {
     if (!actor.task || actor.task.name !== 'eatGrass') {
-        actor.hunger += 1;
+        actor.hunger += actor.newHungerPerTick;
     }
     if (!actor.task || actor.task.name !== 'sleep') {
         actor.tiredness += 0.5;
@@ -24,6 +24,7 @@ const animalTick = (world, actor) => {
     if (actor.pregnancy) {
         actor.pregnancy.time -= 1;
     }
+    actor.age += 1;
 };
 
 /*
@@ -55,6 +56,7 @@ export const animal = (pos) => ({
     nextTask: (world, actor) => wait(3600),
     tick: animalTick,
     lastPregnancy: 0,
+    newHungerPerTick: 1,
     lastPregnancyCheck: 0,
     pregnancy: null,
     foodConsumed: [0],
@@ -64,9 +66,17 @@ export const animal = (pos) => ({
 
 const DAY_SECONDS = 60 * 60 * 24;
 
+const MIN_REPRODUCTION_AGE = 60 * 60 * 24 * 30 * 5;
+const LABOR_TIME = 60 * 30;
+const DAYS_BETWEEN_PREGNANCY = 30;
+
 export const rabbit = (pos) => ({
     ...animal(pos),
+    type: 'rabbit',
     tileSpeed: 30,
+    grassPerTick: 0.003,
+    newHungerPerTick: 0.2,
+    hungerAlleviatedPerTick: 1,
     tick: (world, actor) => {
         animalTick(world, actor);
 
@@ -108,21 +118,23 @@ export const rabbit = (pos) => ({
         if (hour > 20 || hour < 6) {
             if (posEq(actor.pos, actor.home)) {
                 if (actor.pregnancy && actor.pregnancy.time <= 0) {
-                    return giveBirth(world.rng.next() * 60 * 5 + 60 * 30);
+                    return giveBirth(world.rng.next() * 60 * 5 + LABOR_TIME);
                 }
                 if (world.totalSteps - actor.lastPregnancyCheck > DAY_SECONDS) {
                     actor.lastPregnancyCheck = world.totalSteps;
                     // this should check only once per day
                     if (
+                        actor.age > MIN_REPRODUCTION_AGE &&
                         actor.pregnancy == null &&
                         // actor.lastPregnancy > DAY_SECONDS * 10 && // wait 30 days since last
-                        actor.lastPregnancy > DAY_SECONDS * 10 && // wait 30 days since last
+                        actor.lastPregnancy >
+                            DAY_SECONDS * DAYS_BETWEEN_PREGNANCY && // wait 30 days since last
                         world.rng.next() < 0.02
                     ) {
                         // console.log('pregnant!');
                         actor.lastPregnancy = 0;
                         actor.pregnancy = {
-                            time: DAY_SECONDS * (5 + world.rng.next() * 5),
+                            time: DAY_SECONDS * (28 + world.rng.next() * 5),
                             // time: DAY_SECONDS * (28 + world.rng.next() * 5),
                             // size: parseInt(3 + world.rng.next() * 11),
                             size: 2,

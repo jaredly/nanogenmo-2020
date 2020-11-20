@@ -2,6 +2,13 @@ import { addPos, dist, diff, posKey, posEq } from './utils.js';
 
 const beachSize = 2;
 
+const newTile = (type) => ({
+    type,
+    ground: [],
+    items: [],
+    actors: [],
+});
+
 export default (
     rng,
     width = 200,
@@ -23,7 +30,7 @@ export default (
     for (let y = 0; y < world.height; y++) {
         world.tiles.push([]);
         for (let x = 0; x < world.width; x++) {
-            world.tiles[y].push({ type: 'water' });
+            world.tiles[y].push(newTile('water'));
         }
     }
 
@@ -41,7 +48,7 @@ export default (
     world.tiles.forEach((row, y) => {
         row.forEach((tile, x) => {
             if (tile.type === 'dirt' && rng.next() > 0.3) {
-                world.tiles[y][x] = { type: 'grass', grassHeight: 1000 };
+                world.tiles[y][x] = { ...newTile('grass'), grassHeight: 1000 };
             }
         });
     });
@@ -50,7 +57,7 @@ export default (
     world.tiles.forEach((row, y) => {
         row.forEach((tile, x) => {
             if (tile.type === 'rock' && rng.next() > 0.8) {
-                world.tiles[y][x] = { type: 'iron' };
+                world.tiles[y][x] = newTile('iron');
             }
         });
     });
@@ -73,9 +80,9 @@ const makeIsland = (world) => {
             const d = Math.sqrt(dx * dx + dy * dy);
             if (d <= r) {
                 if (r - d < beachSize) {
-                    world.tiles[y][x] = { type: 'sand' };
+                    world.tiles[y][x] = newTile('sand');
                 } else {
-                    world.tiles[y][x] = { type: 'dirt' };
+                    world.tiles[y][x] = newTile('dirt');
                 }
             }
         });
@@ -160,7 +167,7 @@ const randomGrowth = (world, center, count, add) => {
 const riverfy = (world, pos) => {
     const mapCenter = { x: world.width / 2, y: world.height / 2 };
     while (!['water', 'freshwater'].includes(world.tiles[pos.y][pos.x].type)) {
-        world.tiles[pos.y][pos.x] = { type: 'freshwater' };
+        world.tiles[pos.y][pos.x] = newTile('freshwater');
         const cdist = dist(diff(pos, mapCenter));
         const possible = dirs
             .map((dir) => addPos(pos, dir))
@@ -220,12 +227,12 @@ const growTiles = (world, treeSize, onType, tileType) => {
     if (!pos) {
         return;
     }
-    world.tiles[pos.y][pos.x] = { type: tileType };
+    world.tiles[pos.y][pos.x] = newTile(tileType);
     randomGrowth(world, pos, treeSize, (pos) => {
         if (world.tiles[pos.y][pos.x].type !== 'dirt') {
             return false;
         }
-        world.tiles[pos.y][pos.x] = { type: tileType };
+        world.tiles[pos.y][pos.x] = newTile(tileType);
         return true;
     });
 };

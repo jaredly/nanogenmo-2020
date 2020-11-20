@@ -44,6 +44,19 @@ const color = (tile) => {
     );
 };
 
+const rabbitColor = (actor) => {
+    if (!actor.task) {
+        return 'gray';
+    }
+    if (actor.task.name === 'sleep') {
+        return 'black';
+    }
+    if (actor.task.name === 'eatGrass') {
+        return 'red';
+    }
+    return 'blue';
+};
+
 const draw = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const wx = canvas.width / world.tiles[0].length;
@@ -57,13 +70,13 @@ const draw = () => {
         });
     });
     world.actors.forEach((actor) => {
-        ctx.fillStyle =
-            actor.task && actor.task.name == 'sleep' ? 'black' : 'red';
+        ctx.fillStyle = rabbitColor(actor);
+        const margin = 0.3;
         ctx.fillRect(
-            (actor.pos.x + 0.2) * wx,
-            (actor.pos.y + 0.2) * wy,
-            wx * 0.6,
-            wy * 0.6,
+            (actor.pos.x + margin) * wx,
+            (actor.pos.y + margin) * wy,
+            wx * (1 - margin * 2),
+            wy * (1 - margin * 2),
         );
     });
 
@@ -132,8 +145,13 @@ const step = (world) => {
 };
 
 const run = () => {
+    const start = Date.now();
     for (let i = 0; i < steps; i++) {
         step(world);
+        // exceeded the 5 second limit, sorry
+        if (Date.now() - start > 5000) {
+            break;
+        }
     }
     window.log.style.whiteSpace = 'pre';
     window.log.style.fontFamily = 'monospace';
@@ -161,14 +179,14 @@ const run = () => {
 
     Grass tiles with under 20%: ${lowGrass}
 
-    ${world.actors
-        .map((actor) => actor.hunger.toString().padStart(5))
-        .join(' : ')}
-
-    ${world.actors
-        .map((actor) => actor.midnightHunger.map((x) => x.toString()).join(' '))
-        .join('\n')}
     `;
+    // ${world.actors
+    //     .map((actor) => actor.hunger.toString().padStart(5))
+    //     .join(' : ')}
+
+    // ${world.actors
+    //     .map((actor) => actor.midnightHunger.map((x) => x.toString()).join(' '))
+    //     .join('\n')}
     draw();
 };
 
@@ -194,6 +212,7 @@ numSteps.onchange = () => {
         steps = v;
     }
 };
+
 // for (let i = 0; i < 100; i++) {
 //     step(world, 1 / 10); // 6 minutes I guess?
 //     console.log(world.actors[0].tasks);

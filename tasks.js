@@ -43,8 +43,8 @@ export const eatGrass = (time) => ({
         if (tile.grassHeight <= 1) {
             return null;
         }
-        tile.grassHeight -= 0.01;
-        actor.hunger -= 1;
+        tile.grassHeight -= actor.grassPerTick;
+        actor.hunger -= actor.hungerAlleviatedPerTick;
         actor.foodConsumed[0] += 1;
         return time - 1;
     },
