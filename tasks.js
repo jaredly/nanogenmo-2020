@@ -5,7 +5,14 @@ if the return value is null, then we're done
 task = {fn, state}
 */
 import { dirs } from './world.js';
-import { addPos, validPos, tileAt, posEq, todayHours } from './utils.js';
+import {
+    addPos,
+    validPos,
+    tileAt,
+    posEq,
+    todayHours,
+    posKey,
+} from './utils.js';
 import { rabbit } from './animals.js';
 
 export const wait = (time) => ({
@@ -112,6 +119,9 @@ export const goToPos = (pos, time) => ({
         actor.hunger += state.walkTime * 200;
         const next = nextPos(actor.pos, state.pos);
         actor.pos = next;
+        if (actor.knowledge) {
+            actor.knowledge.tiles[posKey(next)] = true;
+        }
         if (posEq(next, state.pos)) {
             return null;
         }

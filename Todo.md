@@ -1,5 +1,16 @@
 # Running list
 
+
+- main character
+  - [x] some fog of war
+  - [x] move in direction
+  - [ ] speed of moving over a tile should be related to the type (slower for forests)
+  - [ ] make an "explore" action that just walks around randomly? to get started
+  - [ ] make a mango tree n stuff
+  - [ ] allow sleeping
+
+
+
 - rabbits
     - [x] birth
     - [ ] death from hunger.... (track BMI, based on number of calories you get per day. eating short grass is harder than long grass probably? that might be hard to do)

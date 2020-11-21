@@ -17,6 +17,9 @@ export default (pos, weight, height) => {
             // but maybe for simplicity I'll just go with energy?
             // well, energy can replenish with resting, but tiredness can only reset with sleep.
         },
+        knowledge: {
+            tiles: { [`${pos.x}:${pos.y}`]: true },
+        },
         type: 'person',
         attributes: {
             // determines how much weight you can carry

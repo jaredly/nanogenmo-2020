@@ -2,7 +2,7 @@
 
 import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
 import makeWorld, { filteredRandPos } from './world.js';
-import { tileAt, addPos } from './utils.js';
+import { tileAt, addPos, posKey, posEq } from './utils.js';
 import { rabbit, tick } from './animals.js';
 import person from './person.js';
 import { wait, goToPos } from './tasks.js';
@@ -61,19 +61,31 @@ const actorColor = (actor) => {
     return 'blue';
 };
 
+const fogOfWar = true;
+
 const draw = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const wx = canvas.width / world.tiles[0].length;
     const wy = canvas.height / world.tiles.length;
     world.tiles.forEach((row, y) => {
         row.forEach((tile, x) => {
-            ctx.fillStyle = color(tile);
-            ctx.globalAlpha =
-                tile.type === 'grass' ? tile.grassHeight / 1000 : 1;
-            ctx.fillRect(x * wx, y * wy, wx, wy);
+            if (fogOfWar && !mainCharacter.knowledge.tiles[posKey({ x, y })]) {
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = 'black';
+                ctx.fillRect(x * wx, y * wy, wx, wy);
+            } else {
+                ctx.fillStyle = color(tile);
+                ctx.globalAlpha =
+                    tile.type === 'grass' ? tile.grassHeight / 1000 : 1;
+                ctx.fillRect(x * wx, y * wy, wx, wy);
+            }
         });
     });
+    ctx.globalAlpha = 1;
     world.actors.forEach((actor) => {
+        if (fogOfWar && !posEq(actor.pos, mainCharacter.pos)) {
+            return;
+        }
         ctx.fillStyle = actorColor(actor);
         const margin = 0.3;
         ctx.fillRect(
@@ -129,6 +141,7 @@ for (let i = 0; i < 5; i++) {
         (x) => tileAt(world, x).type === 'dirt',
         30,
     );
+    if (!rabbitPos) continue;
     for (let r = 0; r < 5; r++) {
         world.actors.push(rabbit(rabbitPos, world));
     }
