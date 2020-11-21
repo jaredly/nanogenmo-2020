@@ -2,9 +2,10 @@
 
 import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
 import makeWorld, { filteredRandPos } from './world.js';
-import { Rabbit } from './old_animals.js';
-import { tileAt } from './utils.js';
+import { tileAt, addPos } from './utils.js';
 import { rabbit, tick } from './animals.js';
+import person from './person.js';
+import { wait, goToPos } from './tasks.js';
 
 canvas.width = 800;
 canvas.height = 800;
@@ -44,7 +45,10 @@ const color = (tile) => {
     );
 };
 
-const rabbitColor = (actor) => {
+const actorColor = (actor) => {
+    if (actor.type === 'person') {
+        return 'orange';
+    }
     if (!actor.task) {
         return 'gray';
     }
@@ -70,7 +74,7 @@ const draw = () => {
         });
     });
     world.actors.forEach((actor) => {
-        ctx.fillStyle = rabbitColor(actor);
+        ctx.fillStyle = actorColor(actor);
         const margin = 0.3;
         ctx.fillRect(
             (actor.pos.x + margin) * wx,
@@ -126,9 +130,17 @@ for (let i = 0; i < 5; i++) {
         30,
     );
     for (let r = 0; r < 5; r++) {
-        world.actors.push(rabbit(rabbitPos));
+        world.actors.push(rabbit(rabbitPos, world));
     }
 }
+
+const mainCharacter = person(
+    { x: (world.width / 2) | 0, y: (world.height / 2) | 0 },
+    135,
+    70,
+);
+mainCharacter.task = wait(3600 * 5);
+world.actors.push(mainCharacter);
 
 draw();
 
@@ -148,6 +160,9 @@ const run = () => {
     const start = Date.now();
     for (let i = 0; i < steps; i++) {
         step(world);
+        if (mainCharacter.task == null) {
+            break;
+        }
         // exceeded the 5 second limit, sorry
         if (Date.now() - start > 5000) {
             break;
@@ -191,6 +206,47 @@ const run = () => {
     //     .map((actor) => actor.midnightHunger.map((x) => x.toString()).join(' '))
     //     .join('\n')}
     draw();
+
+    if (mainCharacter.task == null) {
+        clearInterval(ival);
+        ival = null;
+        options.innerHTML = `
+        <button onclick="doTask('go up')">Go up</button>
+        <button onclick="doTask('go down')">Go down</button>
+        <button onclick="doTask('go left')">Go left</button>
+        <button onclick="doTask('go right')">Go right</button>
+        `;
+    }
+};
+
+window.doTask = (task) => {
+    switch (task) {
+        case 'go up':
+            mainCharacter.task = goToPos(
+                addPos(mainCharacter.pos, { x: 0, y: -1 }),
+                60,
+            );
+            break;
+        case 'go down':
+            mainCharacter.task = goToPos(
+                addPos(mainCharacter.pos, { x: 0, y: 1 }),
+                60,
+            );
+            break;
+        case 'go left':
+            mainCharacter.task = goToPos(
+                addPos(mainCharacter.pos, { x: -1, y: 0 }),
+                60,
+            );
+            break;
+        case 'go right':
+            mainCharacter.task = goToPos(
+                addPos(mainCharacter.pos, { x: 1, y: 0 }),
+                60,
+            );
+            break;
+    }
+    ival = setInterval(run, 100);
 };
 
 let steps = 60 * 60;

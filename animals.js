@@ -13,7 +13,7 @@ import {
 } from './tasks.js';
 import { tileAt, posEq, todayHours } from './utils.js';
 
-const animalTick = (world, actor) => {
+export const animalTick = (world, actor) => {
     if (!actor.task || actor.task.name !== 'eatGrass') {
         actor.hunger += actor.newHungerPerTick;
     }
@@ -74,8 +74,8 @@ const DAYS_BETWEEN_PREGNANCY = 30;
 const GESTATION_PERIOD = 28;
 // const GESTATION_PERIOD = 5;
 
-export const rabbit = (pos) => ({
-    ...animal(pos),
+export const rabbit = (pos, world) => ({
+    ...animal(pos, world),
     type: 'rabbit',
     tileSpeed: 30,
     grassPerTick: 0.003,

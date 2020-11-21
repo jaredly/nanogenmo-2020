@@ -5,7 +5,11 @@
     - [ ] death from hunger.... (track BMI, based on number of calories you get per day. eating short grass is harder than long grass probably? that might be hard to do)
     - [x] hmm it's not quite working. maybe I need to make traveling more expensive?
           what if, the farther you go, the more your hunger goes up?
-    - [ ] maybe going to found new warrens? how to coordinate with others? maybe just "if you come across another warren, with fewer inhabitants, then join it with some probability"
+    - [x] founding new warrens I think
+    - [ ] "if you come across another warren, with fewer inhabitants, then join it with some probability"
+    - [ ] tiles should know that they have a warren
+    - [ ] tiles should record rabbit trails (amount of rabbit signs here, as a float is fine)
+    - [ ] mango trees! Have mangos on them, various stages of ripeness. at a certain point they fall to the ground. on the ground they slowly go bad & decay.
 
 
 
