@@ -10,6 +10,24 @@ export default (pos, weight, height) => {
                 torso: null,
                 head: null,
             },
+            // have you eaten today?
+            // you haven't eaten since yesterday.
+            // you need to eat at least X calories per day in order to maintain energy and body weight.
+            // X calories ... ... ... you get hungry ... if you stay hungry ...
+            //
+            // ok ugh I need to just decide what I think will be the thing.
+
+            // and it can be simple, it's fine.
+
+            // hunger goes up from zero
+            // when it's more than 4 hours, you feel hungry
+            // when it's more than 6 hours, you feel very hungry
+            // more than 8 hours, you feel weak with hunger
+            // more than 16 hours, you feel very weak with hunger
+            // after that you start losing health
+
+            health: 100,
+
             hunger: 0, // is this the right way to represent it?
             thirst: 0, // maybe it should be "how much food is in you"? or something
             long_energy: 100, // hmmmm
@@ -59,7 +77,11 @@ export default (pos, weight, height) => {
         autonomous: false,
         task: null,
         tick: (world, actor) => {
-            actor.vitals.hunger += 1;
+            if (actor.task && actor.task.name === 'sleep') {
+                actor.vitals.hunger += 0.3;
+            } else {
+                actor.vitals.hunger += 1;
+            }
             actor.vitals.thirst += 1;
             // hunger & thirst should go up when engaged in more vigorous activity
         },

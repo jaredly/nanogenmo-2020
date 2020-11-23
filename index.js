@@ -6,6 +6,7 @@ import { tileAt, addPos, posKey, posEq } from './utils.js';
 import { rabbit, tick } from './animals.js';
 import person from './person.js';
 import { wait, goToPos } from './tasks.js';
+import * as fm from './framework.js';
 
 canvas.width = 800;
 canvas.height = 800;
@@ -223,43 +224,77 @@ const run = () => {
     if (mainCharacter.task == null) {
         clearInterval(ival);
         ival = null;
-        options.innerHTML = `
-        <button onclick="doTask('go up')">Go up</button>
-        <button onclick="doTask('go down')">Go down</button>
-        <button onclick="doTask('go left')">Go left</button>
-        <button onclick="doTask('go right')">Go right</button>
-        `;
+        fm.render(options, playerControls(world, mainCharacter));
     }
 };
 
-window.doTask = (task) => {
-    switch (task) {
-        case 'go up':
-            mainCharacter.task = goToPos(
-                addPos(mainCharacter.pos, { x: 0, y: -1 }),
-                60,
-            );
-            break;
-        case 'go down':
-            mainCharacter.task = goToPos(
-                addPos(mainCharacter.pos, { x: 0, y: 1 }),
-                60,
-            );
-            break;
-        case 'go left':
-            mainCharacter.task = goToPos(
-                addPos(mainCharacter.pos, { x: -1, y: 0 }),
-                60,
-            );
-            break;
-        case 'go right':
-            mainCharacter.task = goToPos(
-                addPos(mainCharacter.pos, { x: 1, y: 0 }),
-                60,
-            );
-            break;
+const andJoin = (items) => {
+    if (items.length === 1) {
+        return items[0];
     }
+    if (items.length === 2) {
+        return items[0] + ' and ' + items[1];
+    }
+    return items.slice(0, -1).join(', ') + ', and ' + items[items.length - 1];
+};
+
+const describeTile = (world, tile) => {
+    const place = {
+        grass: 'in a field of grasses',
+        trees: 'in a forest',
+        dirt: 'on some dirt',
+        freshwater: 'swimming in fresh water',
+        water: 'swimming in the ocean',
+        rock: 'on a rocky outcropping',
+    }[tile.type];
+    const whatsHere = [];
+    if (tile.ground.length) {
+        // want to sort by noticability
+        whatsHere.push(
+            'You see ' +
+                andJoin(tile.ground.map((item) => `a ${item.type}`)) +
+                '.',
+        );
+    }
+    if (tile.items.length) {
+        whatsHere.push(
+            'You see ' +
+                andJoin(tile.items.map((item) => `a ${item.type}`)) +
+                '.',
+        );
+    }
+    return `You are ${place}. ${whatsHere.join(' ')}`;
+};
+
+const doTask = (task) => {
+    mainCharacter.task = task;
+    clearInterval(ival);
     ival = setInterval(run, 100);
+};
+
+const playerControls = (world, mainCharacter) => {
+    const description = describeTile(world, tileAt(world, mainCharacter.pos));
+    const dirs = { '<-': [-1, 0], '^': [0, -1], v: [0, 1], '->': [1, 0] };
+    return fm.div({}, [
+        description,
+        fm.div({}, [
+            Object.keys(dirs).map((name) => {
+                const [x, y] = dirs[name];
+                return fm.button(
+                    {
+                        onclick: () =>
+                            doTask(
+                                goToPos(
+                                    addPos(mainCharacter.pos, { x, y }),
+                                    60,
+                                ),
+                            ),
+                    },
+                    [name],
+                );
+            }),
+        ]),
+    ]);
 };
 
 let steps = 60 * 60;
