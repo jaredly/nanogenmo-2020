@@ -120,7 +120,7 @@ export const goToPos = (pos, time) => ({
         const next = nextPos(actor.pos, state.pos);
         actor.pos = next;
         if (actor.knowledge) {
-            actor.knowledge.tiles[posKey(next)] = true;
+            actor.knowledge.tiles[posKey(next)] = world.totalSteps;
         }
         if (posEq(next, state.pos)) {
             return null;

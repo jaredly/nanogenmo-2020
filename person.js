@@ -1,8 +1,20 @@
 //
+const between = (a, b, c) => a >= b && a < c;
+
+const betweens = (number, ats) => {
+    for (let at of ats) {
+        if (at[0] <= number) {
+            return at[1];
+        }
+    }
+};
+const HOUR_SECONDS = 60 * 60;
+const DAY_SECONDS = HOUR_SECONDS * 24;
 
 export default (pos, weight, height) => {
     const person = {
         pos,
+        tileSpeed: 60,
         vitals: {
             injuries: {
                 legs: null,
@@ -35,8 +47,28 @@ export default (pos, weight, height) => {
             // but maybe for simplicity I'll just go with energy?
             // well, energy can replenish with resting, but tiredness can only reset with sleep.
         },
+        describe: (world, person, mainCharacter) => {
+            const statuses = [
+                betweens(person.vitals.health, [
+                    [100, 'You are uninjured.'],
+                    [75, 'You are somewhat hurt.'],
+                    [50, 'You are very hurt.'],
+                    [25, 'You are gravely injured.'],
+                    [0, 'You are nearly dead.'],
+                ]),
+                betweens(person.vitals.hunger, [
+                    [HOUR_SECONDS * 16, 'You feel very weak with hunger.'],
+                    [HOUR_SECONDS * 8, 'You feel weak with hunger.'],
+                    [HOUR_SECONDS * 6, 'You are very hungry.'],
+                    [HOUR_SECONDS * 4, 'You are hungry.'],
+                    [HOUR_SECONDS * 1, null],
+                    [0, 'You are full'],
+                ]),
+            ];
+            return statuses.filter(Boolean).join('\n');
+        },
         knowledge: {
-            tiles: { [`${pos.x}:${pos.y}`]: true },
+            tiles: { [`${pos.x}:${pos.y}`]: 0 },
         },
         type: 'person',
         attributes: {
