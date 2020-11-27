@@ -20,6 +20,7 @@ const world = {
     tiles: [],
     width: 10,
     height: 10,
+    person: {},
 };
 
 for (let y = 0; y < world.height; y++) {
@@ -56,17 +57,16 @@ const circle = (ctx, { x, y }, r) => {
 };
 
 const drawItems = {
-    leaves: (ctx, item, box) => {
+    oakLeaves: (ctx, item, box) => {
         ctx.globalAlpha = 0.7;
         ctx.fillStyle = '#6D4C41';
         circle(ctx, boxPos(box, item.pos), ((box.w / 10) * item.volume) / 2);
         ctx.fill();
     },
-    branch: (ctx, item, box) => {
+    oakBranch: (ctx, item, box) => {
         const pixelsPerInch = box.w / 10 / 12;
         ctx.strokeStyle = 'black';
         ctx.lineWidth = item.width * pixelsPerInch;
-        // ctx.lineWidth = 10;
         const p1 = angleFromPoint(
             boxPos(box, item.pos),
             item.orientation,
@@ -87,13 +87,13 @@ const drawItems = {
         circle(ctx, boxPos(box, item.pos), (box.w / 10 / 12) * 3);
         ctx.fill();
     },
-    'mango-tree': (ctx, item, box) => {
+    mangoTree: (ctx, item, box) => {
         ctx.fillStyle = 'orange';
         ctx.globalAlpha = 0.4;
         circle(ctx, boxPos(box, item.pos), (box.w / 10) * Math.sqrt(item.age));
         ctx.fill();
     },
-    'oak-tree': (ctx, item, box) => {
+    oakTree: (ctx, item, box) => {
         ctx.fillStyle = 'green';
         ctx.globalAlpha = 0.2;
         circle(ctx, boxPos(box, item.pos), (box.w / 10) * Math.sqrt(item.age));
