@@ -10,6 +10,7 @@ import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
 // import * as fm from './framework.js';
 // import './logic-world.js';
 import { forestTile } from './logic-world.js';
+import { newPerson, nextPlan, executePlan } from './logic.js';
 
 canvas.width = 800;
 canvas.height = 800;
@@ -21,6 +22,7 @@ const world = {
     width: 10,
     height: 10,
     person: {},
+    rng,
 };
 
 for (let y = 0; y < world.height; y++) {
@@ -130,3 +132,10 @@ const draw = (ctx, world) => {
 draw(ctx, world);
 
 console.log(world);
+const person = newPerson(world.rng);
+person.plan = nextPlan(world, person);
+console.log('Plan');
+console.log(person.plan);
+executePlan(world, person, person.plan);
+
+console.log(person);

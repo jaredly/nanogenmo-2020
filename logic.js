@@ -18,16 +18,22 @@ Then construct a tree of possible ways of fulfilling those needs, filtered by wh
 The tree of possible ways will have "desirability" weights. Including "how likely they are to succeed" and "how well they will fill the need".
 We then take a weighted random action, based on the results.
 
+
+
+
+TODO need to model "preparation". e.g., collecting a bunch of fruits so that you can eat them from the
+comfort of your bed, instead of going out and gathering.
+
 */
 
-const chooseWeighted = (rng, items, fn = (i) => i.weight) => {
+export const chooseWeighted = (rng, items, fn = (i) => i.weight) => {
     const totalWeight = items.reduce((t, m) => t + fn(m), 0);
     const d = rng.next() * totalWeight;
     let at = 0;
     for (let i = 0; i < items.length; i++) {
         at += fn(items[i]);
         if (at > d) {
-            return i;
+            return items[i];
         }
     }
 };
@@ -38,11 +44,14 @@ export const newPerson = (rng) => ({
     thirst: 0,
     tiredness: 0,
     backpack: [],
+    inHand: [],
+    plan: null,
 });
 
 export const personNeeds = (world, person) => {
+    console.log('person', person);
     const needs = [];
-    if (person.hunegr > 5) {
+    if (person.hunger > 5) {
         needs.push({ type: 'eat', weight: person.hunger });
     }
     if (person.tiredness > 14) {
@@ -54,14 +63,21 @@ export const personNeeds = (world, person) => {
     return needs;
 };
 
-// TODO: have this return a number, indicating "how good" it is at filling the need. so there's
-// different desirability.
-// also TODO:
-export const meedsNeed = (item, need) => {
-    if (need.type === 'eat') {
-        return item.kinds.includes('edible');
-    }
-};
+// // TODO: have this return a number, indicating "how good" it is at filling the need. so there's
+// // different desirability.
+// // also TODO:
+// export const meedsNeed = (item, need) => {
+//     if (need.type === 'eat') {
+//         // so what I want to do here,
+//         // is have the need be "hunger",
+//         // and instead of a bool here I return
+//         // "a subset of steps".
+//         // like ["obtain mango", "eat mango"]
+//         // and then obtaim mango gets expanded out.
+//         // right?
+//         return item.kinds.includes('edible');
+//     }
+// };
 
 export const generatePlansForNeed = (world, person, need) => {
     // ok basic idea.
@@ -70,8 +86,40 @@ export const generatePlansForNeed = (world, person, need) => {
     // for curiousity, it would be a special case, in that things would
     // only be counted if they haven't been seen before (the person would
     // start with a number of things built into their knowledge)
-    const goals = Object.keys(items).filter((k) => meetsNeed(item[k], need));
+    // const goals = Object.keys(items).filter((k) => meetsNeed(item[k], need));
+
+    const plans = [];
+    for (let key of Object.keys(items)) {
+        if (
+            need.type === 'eat' &&
+            items[key].kinds &&
+            items[key].kinds.includes('edible')
+        ) {
+            console.log('ok', items[key]);
+            const itemPlans = generatePlansForItem(world, person, items[key]);
+            if (itemPlans.length) {
+                const plan = chooseWeighted(
+                    world.rng,
+                    itemPlans,
+                    (plan) => 1 / (plan.cost + 1),
+                );
+                plans.push({
+                    cost: plan.cost,
+                    name: 'eat-food',
+                    steps: [plan, { type: 'eat', item: items[key] }],
+                });
+            }
+        }
+    }
+
+    // are items the only things that meet needs?
+    // or are there other ways?
+    // anyway, that's all for now folks.
+    return plans;
 };
+
+// STOPSHIP
+const movementCost = (world, person, pos) => 1;
 
 /**
  * Plans for how to get this item.
@@ -112,17 +160,23 @@ export const generatePlansForItem = (world, person, item) => {
     if (item.recipes) {
         item.recipes.forEach((recipe) => {
             let totalCost = recipe.cost;
+            // TODO: maybe randomize the order that we go get the things in?
             let steps = [];
             let failed = recipe.items.some((inner) => {
-                let plans = generatePlansForItem(world, person, inner);
+                const plans = generatePlansForItem(
+                    world,
+                    person,
+                    items[inner.type],
+                );
                 if (!plans.length) {
                     return true;
                 }
                 const plan = chooseWeighted(
                     world.rng,
                     plans,
-                    (plan) => 1 / plan.cost,
+                    (plan) => 1 / (plan.cost + 1),
                 );
+                totalCost += plan.cost;
                 steps.push({ type: 'obtain-recipe-ingredient', plan });
             });
             if (!failed) {
@@ -136,6 +190,28 @@ export const generatePlansForItem = (world, person, item) => {
     }
 
     // if it can be derived from a landscape (non-movable) item, go to a tile with that item
+    if (item.sources) {
+        item.sources.forEach((source) => {
+            const plans = generatePlansForLandFeature(
+                world,
+                person,
+                landFeatures[source.type],
+            );
+            if (!plans.length) {
+                return;
+            }
+            const plan = chooseWeighted(
+                world.rng,
+                plans,
+                (plan) => 1 / (plan.cost + 1),
+            );
+            plans.push({
+                cost: plan.cost + source.cost,
+                name: 'derive-from-source',
+                plan,
+            });
+        });
+    }
 
     return plans;
 };
@@ -161,10 +237,40 @@ export const generatePlansForLandFeature = (world, person, item) => {
 
 export const nextPlan = (world, person) => {
     const needs = personNeeds(world, person);
+    console.log('needs', needs);
     const need = chooseWeighted(world.rng, needs);
+    console.log('need', need);
     const plans = generatePlansForNeed(world, person, need);
-    const plan = chooseWeighted(world.rng, plans, (plan) => 1 / plan.cost);
+    console.log('plans', plans);
+    const plan = chooseWeighted(
+        world.rng,
+        plans,
+        (plan) => 1 / (plan.cost + 1),
+    );
     return plan;
+};
+
+export const planSteps = {
+    goTo: (world, person, step) => {
+        // TODO add an item to the list of things
+        person.pos = step.pos;
+    },
+};
+
+export const executePlan = (world, person, plan) => {
+    console.log('>> execute', plan);
+    plan.steps.forEach((step) => {
+        if (step.name != null) {
+            return executePlan(world, person, step);
+        }
+        if (!planSteps[step.type]) {
+            console.log(`>> No way to execute ${step.type}`);
+            console.log(step);
+        } else {
+            console.log(`>> Executing ${step.type}`);
+            planSteps[step.type](world, person, step);
+        }
+    });
 };
 
 // class Person {
@@ -195,6 +301,7 @@ export const landFeatures = {
         location: ['river', 'stream'],
     },
 };
+Object.keys(landFeatures).forEach((k) => (landFeatures[k].type = k));
 
 // crafting things probably takes skill
 // if you fail to craft, you ruin some material
@@ -255,6 +362,7 @@ export const items = {
         tools: ['kiln-on'],
     },
 };
+Object.keys(items).forEach((k) => (items[k].type = k));
 
 const actions = {
     exploreForMangos: {
