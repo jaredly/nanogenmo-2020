@@ -110,7 +110,6 @@ const drawItem = (ctx, item, x, y, w, h) => {
     } else {
         console.log('not drawing', item.type);
     }
-    // const {size, color} = itemParams(item)
 };
 
 const drawTile = (ctx, tile, x, y, w, h) => {
@@ -129,6 +128,14 @@ const draw = (ctx, world) => {
     });
 };
 
+// const condenseNarrative = narrative => {
+//     const result = [];
+//     narrative.forEach(item => {
+//         const last = result[result.length - 1]
+//         if (last && last.type === item.type)
+//     })
+// }
+
 draw(ctx, world);
 
 console.log(world);
@@ -139,3 +146,12 @@ console.log(person.plan);
 executePlan(world, person, person.plan);
 
 console.log(person);
+// console.log(person.narrative.join('\n'));
+
+for (let i = 0; i < 100; i++) {
+    person.plan = nextPlan(world, person);
+    executePlan(world, person, person.plan);
+    // console.log(person.narrative.join('\n'));
+}
+window.story.style.whiteSpace = 'pre';
+window.story.textContent = person.narrative.map((m) => m.text).join('\n');

@@ -39,6 +39,13 @@ export const chooseWeighted = (rng, items, fn = (i) => i.weight) => {
 };
 
 export const newPerson = (rng) => ({
+    name: 'Olivia',
+    pronouns: {
+        subject: 'she',
+        object: 'her',
+        possessive: 'her',
+        possessiveObject: 'hers',
+    },
     pos: { x: 0, y: 0 },
     hunger: 10,
     thirst: 0,
@@ -46,6 +53,7 @@ export const newPerson = (rng) => ({
     backpack: [],
     inHand: [],
     plan: null,
+    narrative: [],
 });
 
 export const personNeeds = (world, person) => {
@@ -61,6 +69,14 @@ export const personNeeds = (world, person) => {
     needs.push({ type: 'explore', weight: 1 });
     needs.push({ type: 'rest', weight: 1 });
     return needs;
+};
+
+// STOPSHIP TODO: give steps time lengths, and then call this
+// when executing a step.
+export const timeTick = (world, person, minutes) => {
+    person.hunger += minutes / 60;
+    person.thirst += minutes / 60;
+    person.tiredness += minutes / 60;
 };
 
 // // TODO: have this return a number, indicating "how good" it is at filling the need. so there's
@@ -87,6 +103,50 @@ export const generatePlansForNeed = (world, person, need) => {
     // only be counted if they haven't been seen before (the person would
     // start with a number of things built into their knowledge)
     // const goals = Object.keys(items).filter((k) => meetsNeed(item[k], need));
+
+    if (need.type === 'rest') {
+        return [{ cost: 0, name: 'rest', steps: [{ type: 'rest' }] }];
+    }
+
+    if (need.type === 'explore') {
+        const dirs = {
+            north: [0, -1],
+            south: [0, 1],
+            east: [-1, 0],
+            west: [1, 0],
+        };
+        const names = Object.keys(dirs);
+        const dir = names[(world.rng.next() * names.length) | 0];
+        // person.narrative.push(`${person.name} walked ${dir} to see what was over there.`)
+        const nextPos = {
+            x: person.pos.x + dirs[dir][0],
+            y: person.pos.y + dirs[dir][1],
+        };
+
+        return [
+            {
+                cost: 10,
+                name: 'explore',
+                steps: [
+                    { type: 'explore', dir },
+                    { type: 'goTo', pos: nextPos },
+                ],
+            },
+        ];
+    }
+
+    if (need.type === 'sleep') {
+        return [
+            {
+                cost: 10,
+                name: 'sleep',
+                steps: [
+                    // TODO require going back home
+                    { type: 'sleep' },
+                ],
+            },
+        ];
+    }
 
     const plans = [];
     for (let key of Object.keys(items)) {
@@ -242,6 +302,9 @@ export const nextPlan = (world, person) => {
     console.log('need', need);
     const plans = generatePlansForNeed(world, person, need);
     console.log('plans', plans);
+    if (!plans.length) {
+        throw new Error(`No plans!`);
+    }
     const plan = chooseWeighted(
         world.rng,
         plans,
@@ -251,9 +314,68 @@ export const nextPlan = (world, person) => {
 };
 
 export const planSteps = {
+    sleep: (world, person, step) => {
+        person.narrative.push({
+            type: 'sleep',
+            text: `${person.name} was so tired they lay down on the ground and slept.`,
+        });
+        timeTick(world, person, 60 * 5);
+        person.tiredness = 0;
+    },
+    rest: (world, person, step) => {
+        person.narrative.push({
+            type: 'rest',
+            text: `${person.name} rested for a while.`,
+        });
+        timeTick(world, person, 30);
+    },
+    explore: (world, person, step) => {
+        // const dirs = {'north': [0,-1], 'south': [0,1], 'east': [-1, 0], 'west': [1, 0]}
+        // const names = Object.keys(dirs)
+        // const dir = names[world.rng.next() * names.length | 0]
+        person.narrative.push({
+            type: 'explore',
+            text: `${person.name} looked ${step.dir} to the forest. ${person.pronouns.subject} wondered what was over there.`,
+        });
+    },
     goTo: (world, person, step) => {
         // TODO add an item to the list of things
         person.pos = step.pos;
+        // STOPSHIP WORK HERE. ASSEMBLE A NARRATIVE PLEASE
+        // DUNNO HOW. MAYBE JUST DO HARDCODED SENTENCES FOR THE MOMENT
+        person.narrative.push({
+            type: 'goTo',
+            text: `${person.name} walked for a while to ${step.pos.x},${step.pos.y}.`,
+        });
+        timeTick(world, person, 10);
+    },
+    pickUp: (world, person, step) => {
+        const { x, y } = person.pos;
+        const tile = world.tiles[y][x];
+        const found = tile.movable.filter((m) => m.type === step.item.type);
+        if (!found.length) {
+            return false;
+        }
+        person.inHand.push(found[0]);
+        tile.movable = tile.movable.filter((m) => m !== found[0]);
+        person.narrative.push({
+            type: 'pickUp',
+            text: `${person.name} picked up ${
+                found.length === 1 ? 'the' : 'a'
+            } ${step.item.type}.`,
+        });
+    },
+    eat: (world, person, step) => {
+        const found = person.inHand.find((t) => t.type == step.item.type);
+        if (!found) {
+            return false;
+        }
+        person.inHand = person.inHand.filter((t) => t !== found);
+        person.hunger -= 10;
+        person.narrative.push({
+            type: 'eat',
+            text: `${person.name} ate the ${found.type}.`,
+        });
     },
 };
 
@@ -268,7 +390,10 @@ export const executePlan = (world, person, plan) => {
             console.log(step);
         } else {
             console.log(`>> Executing ${step.type}`);
-            planSteps[step.type](world, person, step);
+            const success = planSteps[step.type](world, person, step);
+            if (success == false) {
+                throw new Error('failed to execute');
+            }
         }
     });
 };
