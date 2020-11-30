@@ -128,6 +128,64 @@ const draw = (ctx, world) => {
     });
 };
 
+// hmmm I need to condense PLANS too. maybe events should be grouped by the outer plan? idk.
+const condenseEvents = (events) => {
+    const result = [];
+    events.forEach((item) => {
+        const last = result[result.length - 1];
+        if (last && last.type === item.type) {
+            if (!last.additional) {
+                last.additional = [item];
+            } else {
+                last.additional.push(item);
+            }
+        } else {
+            result.push(item);
+        }
+    });
+    return result;
+};
+
+const narrativeEvents = {
+    sleep: (event) => {
+        return `{{person}} slept for ${(event.length / 60).toFixed(1)} hours.`;
+    },
+    rest: (event) => {
+        return `{{person}} sat down and rested for a few minutes.`;
+    },
+    explore: (event) => {
+        return `{{person}} couldn't think of anything else to do, and walked around for a while, exploring.`;
+    },
+    goTo: (event) => {
+        return `{{person}} walked in a direction.`;
+    },
+    pickUp: (event) =>
+        `{{person}} picked up ${event.of > 1 ? 'a' : 'the'} ${event.item.type}`,
+    inspect: (event) =>
+        `{{person}} turned the ${event.item.type} over in {{possessive}} hands. It looked a little odd, but not too much.`,
+    eat: (event) => `{{person}} ate the ${event.item.type}.`,
+};
+
+const constructNarrative = (person, events) => {
+    const text = [];
+    const antecedents = {};
+    events = condenseEvents(events);
+    events.forEach((event, i) => {
+        if (!narrativeEvents[event.type]) {
+            console.log('cant narrate', event);
+            return;
+        }
+        text.push(narrativeEvents[event.type](event));
+    });
+    return text;
+    // things I want to do:
+    // keep track of "antecedents". If I've referred to something
+    // directly within the past sentence, or with a pronoun, and nothing
+    // else has come up that fits that pronoun, then I can use the pronoun.
+    // otherwise I use the full name.
+    //
+};
+
 // const condenseNarrative = narrative => {
 //     const result = [];
 //     narrative.forEach(item => {
@@ -141,17 +199,26 @@ draw(ctx, world);
 console.log(world);
 const person = newPerson(world.rng);
 person.plan = nextPlan(world, person);
+
+const narrative = [];
+
 console.log('Plan');
 console.log(person.plan);
-executePlan(world, person, person.plan);
+executePlan(world, person, person.plan, narrative);
 
 console.log(person);
 // console.log(person.narrative.join('\n'));
 
 for (let i = 0; i < 100; i++) {
     person.plan = nextPlan(world, person);
-    executePlan(world, person, person.plan);
+    executePlan(world, person, person.plan, narrative);
     // console.log(person.narrative.join('\n'));
 }
+console.log(narrative);
 window.story.style.whiteSpace = 'pre';
-window.story.textContent = person.narrative.map((m) => m.text).join('\n');
+window.story.textContent = constructNarrative(person, person.narrative).join(
+    '\n',
+);
+// window.story.textContent = person.narrative
+//     .map((m) => JSON.stringify(m))
+//     .join('\n');
