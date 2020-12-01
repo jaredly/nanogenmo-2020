@@ -102,7 +102,7 @@ const drawItem = (ctx, item, x, y, w, h) => {
 };
 
 const drawTile = (ctx, tile, x, y, w, h) => {
-    ctx.globalAlpha = 0.2;
+    ctx.globalAlpha = 0.6;
     // ctx.globalAlpha = 1;
     ctx.fillStyle = tileColors[tile.type] || 'black';
     ctx.fillRect(x, y, w, h);
