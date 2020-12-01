@@ -96,8 +96,23 @@ const drawItem = (ctx, item, x, y, w, h) => {
 };
 
 const drawTile = (ctx, tile, x, y, w, h) => {
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = tileColors[tile.type] || 'black';
+    ctx.fillRect(x, y, w, h);
+    ctx.globalAlpha = 1;
     tile.movable.forEach((item) => drawItem(ctx, item, x, y, w, h));
     tile.landscape.forEach((item) => drawItem(ctx, item, x, y, w, h));
+};
+
+const tileColors = {
+    water: 'blue',
+    sand: 'orange',
+    trees: '#0a4a0a',
+    grass: '#105a0a',
+    dirt: '#9c572c',
+    rock: 'gray',
+    freshwater: '#05f',
+    iron: '#666',
 };
 
 const draw = (ctx, world) => {

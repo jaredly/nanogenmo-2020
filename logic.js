@@ -38,7 +38,7 @@ export const chooseWeighted = (rng, items, fn = (i) => i.weight) => {
     }
 };
 
-export const newPerson = (rng) => ({
+export const newPerson = (rng, pos) => ({
     name: 'Olivia',
     pronouns: {
         subject: 'she',
@@ -46,7 +46,7 @@ export const newPerson = (rng) => ({
         possessive: 'her',
         possessiveObject: 'hers',
     },
-    pos: { x: 0, y: 0 },
+    pos,
     hunger: 10,
     thirst: 0,
     tiredness: 0,
