@@ -11,6 +11,7 @@ import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
 // import './logic-world.js';
 import { forestTile, makeWorld, runWorld } from './logic-world.js';
 import { newPerson, nextPlan, executePlan } from './logic.js';
+import { angle, diff } from './utils.js';
 
 canvas.width = 800;
 canvas.height = 800;
@@ -131,7 +132,13 @@ const draw = (ctx, world) => {
         });
     });
 
-    ctx.fillStyle = 'brown';
+    ctx.fillStyle =
+        {
+            sleep: 'black',
+            rest: 'blue',
+            'eat-food': 'yellow',
+            explore: 'magenta',
+        }[world.person.plan ? world.person.plan.name : 'rest'] || 'teal';
     ctx.globalAlpha = 1;
     circle(
         ctx,
@@ -159,24 +166,137 @@ const condenseEvents = (events) => {
     return result;
 };
 
+const cardinal = (angle) => {
+    let split = parseInt((angle / Math.PI / 2) * 8);
+    if (split < 0) {
+        split += 8;
+    }
+    if (split < 0 || split >= 8 || isNaN(split)) {
+        console.log(split, angle);
+    }
+    return [
+        'north',
+        'northeast',
+        'east',
+        'southeast',
+        'south',
+        'southwest',
+        'west',
+        'northwest',
+    ][split];
+};
+
+const describePlace = (tile) => {
+    const res = [`The area was full of ${tile.type}.`];
+    const counts = {};
+    tile.landscape.forEach((i) => {
+        counts[i.type] = (counts[i.type] || 0) + 1;
+    });
+    tile.movable.forEach((i) => {
+        counts[i.type] = (counts[i.type] || 0) + 1;
+    });
+    Object.keys(counts).forEach((key) => {
+        res.push(`I saw ${counts[key]} ${pluralize(key, counts[key])}.`);
+    });
+    return res.join(' ');
+};
+const pluralize = (name, num) =>
+    num > 1 ? (name.endsWith('s') ? name : name + 's') : name;
+
 const narrativeEvents = {
     sleep: (event) => {
-        return `{{person}} slept for ${(event.length / 60).toFixed(1)} hours.`;
+        return `I slept for ${(event.length / 60).toFixed(1)} hours.`;
     },
     rest: (event) => {
-        return `{{person}} sat down and rested for a few minutes.`;
+        return `I sat down and rested for a few minutes.`;
     },
     explore: (event) => {
-        return `{{person}} couldn't think of anything else to do, and walked around for a while, exploring.`;
+        const { x, y } = event.pos;
+        return `I couldn't think of anything else to do, and walked ${
+            event.dir
+        }. ${describePlace(world.tiles[y][x])}`;
     },
     goTo: (event) => {
-        return `{{person}} walked in a direction.`;
+        return `I walked ${cardinal(angle(diff(event.dest, event.current)))}.`;
     },
     pickUp: (event) =>
-        `{{person}} picked up ${event.of > 1 ? 'a' : 'the'} ${event.item.type}`,
+        `I picked up ${event.of > 1 ? 'a' : 'the'} ${event.item.type}.`,
     inspect: (event) =>
-        `{{person}} turned the ${event.item.type} over in {{possessive}} hands. It looked a little odd, but not too much.`,
-    eat: (event) => `{{person}} ate the ${event.item.type}.`,
+        `I turned the ${event.item.type} over in {{possessive}} hands. It looked a little odd, but not too much.`,
+    eat: (event) => `I ate the ${event.item.type}.`,
+
+    decide: (event, person) => {
+        return `I thought about what to do next.`;
+    },
+
+    'execute-plan': (event, person) => {
+        const items = [
+            `I decided to ${andThen(
+                event.narrative.map((item) => summarizePlan(item, person)),
+            )}.`,
+        ];
+        event.narrative.forEach((item) => {
+            items.push(narrativeEvents[item.type](item, person));
+        });
+        return items.join(' ');
+    },
+};
+
+const andThen = (items) => {
+    return items.filter(Boolean).join(', and then ');
+};
+
+const summaries = {
+    eat: (item) => `eat the ${item.item.type}`,
+    'go-pickup': (event) => `go pick up a ${event.purpose.item.type}`,
+    rest: () => 'take a break',
+    sleep: () => 'sleep',
+    explore: () => 'do some exploring',
+    goTo: () => 'walk over there',
+    pickUp: (event) => `pick up the ${event.item.type}`,
+    inspect: (event) => `inspect the ${event.item.type}`,
+    decide: () => 'decide what to do next',
+};
+
+const summarizePlan = (item, person) => {
+    if (summaries[item.type]) {
+        return summaries[item.type](item, person);
+    }
+    if (item.name && item.purpose) {
+        return `come up with a plan ${describePurpose(item.purpose)}`;
+    }
+    console.error('cant summarize', item);
+};
+
+const capitalized = (x) => x[0].toUpperCase() + x.slice(1);
+
+const describeNeed = (need) => {
+    // TODO: vary this a bit
+    switch (need.type) {
+        case 'eat':
+            return `because I needed to eat`;
+        case 'sleep':
+            return `because I was so tired`;
+        case 'explore':
+            return `because I felt like exploring`;
+        case 'rest':
+            return `because I couldn't think of anything else to do`;
+        default:
+            return `because I felt like it`;
+    }
+};
+
+const describePurpose = (purpose) => {
+    switch (purpose.type) {
+        case 'need':
+            return describeNeed(purpose.need);
+        case `get`:
+            return `to get a ${purpose.item.type}`;
+        case 'be-near':
+            return `to get to a ${purpose.item.type}`;
+        default:
+            return `because I felt like it`;
+    }
 };
 
 const constructNarrative = (person, events) => {
@@ -188,9 +308,10 @@ const constructNarrative = (person, events) => {
             console.log('cant narrate', event);
             return;
         }
-        text.push(narrativeEvents[event.type](event));
+        text.push(narrativeEvents[event.type](event, person));
     });
-    return text;
+    return text.join('\n');
+
     // things I want to do:
     // keep track of "antecedents". If I've referred to something
     // directly within the past sentence, or with a pronoun, and nothing
@@ -198,6 +319,7 @@ const constructNarrative = (person, events) => {
     // otherwise I use the full name.
     //
 };
+window.constructNarrative = constructNarrative;
 
 const rng = new Prando(123);
 // const world = makeWorld(rng, { width: 20, height: 20 });
@@ -223,18 +345,20 @@ const narrative = [];
 
 const speed = 100;
 
+window.story.style.whiteSpace = 'pre-wrap';
+window.story.style.width = '500px';
+
 const run = () => {
     runWorld(world, narrative, 1);
     console.log(world.person.plan);
     draw(ctx, world);
-
-    // window.story.style.whiteSpace = 'pre';
-    // window.story.textContent = constructNarrative(world.person, narrative).join(
-    //     '\n',
-    // );
 };
+window.person = world.person;
+window.narrative = narrative;
 
-let ival = setInterval(run, speed);
+// let ival = setInterval(run, speed);
+runWorld(world, narrative, 20);
+draw(ctx, world);
 
 pauseButton.onclick = () => {
     if (ival) {
@@ -246,7 +370,9 @@ pauseButton.onclick = () => {
         ival = setInterval(run, speed);
     }
 };
-
-// window.story.textContent = person.narrative
-//     .map((m) => JSON.stringify(m))
-//     .join('\n');
+// window.story.textContent = constructNarrative(world.person, narrative);
+runWorld(world, narrative, 1600);
+const full = constructNarrative(world.person, narrative);
+window.full = full;
+// window.dest.value = full
+console.log(full.split(/\s+/g).length);

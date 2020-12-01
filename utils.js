@@ -1,5 +1,6 @@
 //
 
+export const angle = ({ x, y }) => Math.atan2(y, x);
 export const tileAt = (world, pos) => world.tiles[pos.y][pos.x];
 export const addPos = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
 export const dist = ({ x, y }) => Math.sqrt(x * x + y * y);

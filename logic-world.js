@@ -180,6 +180,10 @@ export const makeWorld = (rng, config) => {
 export const runWorld = (world, narrative, iterations = 100) => {
     for (let i = 0; i < iterations; i++) {
         world.person.plan = nextPlan(world, world.person, narrative);
+        if (!world.person.plan) {
+            console.log('ran out of plans', i);
+            return;
+        }
         executePlan(world, world.person, world.person.plan, narrative);
         // console.log(person.narrative.join('\n'));
     }

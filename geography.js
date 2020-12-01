@@ -21,6 +21,7 @@ export default (rng, config) => {
 
     const world = {
         rng,
+        time: 0,
         tiles: [],
         width,
         height,

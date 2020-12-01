@@ -84,6 +84,7 @@ export const timeTick = (world, person, minutes) => {
     person.hunger += minutes / 60;
     person.thirst += minutes / 60;
     person.tiredness += minutes / 60;
+    world.time += minutes;
 };
 
 export const generatePlansForNeed = (world, person, need) => {
@@ -153,7 +154,7 @@ export const generatePlansForNeed = (world, person, need) => {
             const itemPlans = bestPlans(
                 generatePlansForItem(world, person, items[key]),
             );
-            console.log(key, itemPlans);
+            // console.log(key, itemPlans);
             if (itemPlans.length) {
                 const plan = chooseWeighted(
                     world.rng,
@@ -324,15 +325,17 @@ export const nextPlan = (world, person, narrative) => {
     const plans = bestPlans(generatePlansForNeed(world, person, need));
     // console.log('plans', plans);
     if (!plans.length) {
-        throw new Error(`No plans!`);
+        // throw new Error(`No plans!`);
+        return null;
     }
-    console.log(plans);
+    // console.log(plans);
     const plan = chooseWeighted(
         world.rng,
         plans,
         (plan) => 1 / (plan.cost + 1),
     );
     narrative.push({
+        time: world.time,
         type: 'decide',
         need,
         plans,
@@ -346,6 +349,7 @@ export const planSteps = {
         // TODO normal distribution here please
         const length = (world.rng.next() * 5 + 3) * 60;
         narrative.push({
+            time: world.time,
             type: 'sleep',
             length,
         });
@@ -356,34 +360,34 @@ export const planSteps = {
     rest: (world, person, step, narrative) => {
         const length = world.rng.next() * 40 + 10;
         narrative.push({
+            time: world.time,
             type: 'rest',
             length,
         });
         timeTick(world, person, length);
     },
     explore: (world, person, step, narrative) => {
-        // const dirs = {'north': [0,-1], 'south': [0,1], 'east': [-1, 0], 'west': [1, 0]}
-        // const names = Object.keys(dirs)
-        // const dir = names[world.rng.next() * names.length | 0]
+        const length = world.rng.next() * 10 + 5;
         narrative.push({
+            time: world.time,
             type: 'explore',
             dir: step.dir,
             pos: person.pos,
-            // text: `${person.name} looked ${step.dir} to the forest. ${person.pronouns.subject} wondered what was over there.`,
         });
+        timeTick(world, person, length);
     },
     goTo: (world, person, step, narrative) => {
         // TODO add an item to the list of things
-        person.pos = step.pos;
         // STOPSHIP WORK HERE. ASSEMBLE A NARRATIVE PLEASE
         // DUNNO HOW. MAYBE JUST DO HARDCODED SENTENCES FOR THE MOMENT
         narrative.push({
+            time: world.time,
             type: 'goTo',
             dest: step.pos,
             current: person.pos,
-            // text: `${person.name} walked for a while to ${step.pos.x},${step.pos.y}.`,
         });
-        timeTick(world, person, 10);
+        timeTick(world, person, movementCost(world, person, step.pos) * 5);
+        person.pos = step.pos;
     },
     pickUp: (world, person, step, narrative) => {
         const { x, y } = person.pos;
@@ -395,12 +399,14 @@ export const planSteps = {
         person.inHand.push(found[0]);
         tile.movable = tile.movable.filter((m) => m !== found[0]);
         narrative.push({
+            time: world.time,
             type: 'pickUp',
             item: found[0],
             of: found.length,
         });
         if (world.rng.next() < 0.2) {
             narrative.push({
+                time: world.time,
                 type: 'inspect',
                 item: found[0],
             });
@@ -414,17 +420,20 @@ export const planSteps = {
         person.inHand = person.inHand.filter((t) => t !== found);
         person.hunger -= 10;
         narrative.push({
+            time: world.time,
             type: 'eat',
             item: found,
             of: found.length,
             // text: `${person.name} ate the ${found.type}.`,
         });
+        timeTick(world, person, world.rng.next() * 5 + 3);
     },
 };
 
 export const executePlan = (world, person, plan, narrative) => {
     const innerNarrative = [];
     narrative.push({
+        time: world.time,
         type: 'execute-plan',
         name: plan.name,
         purpose: plan.purpose,
@@ -452,20 +461,6 @@ export const executePlan = (world, person, plan, narrative) => {
         }
     });
 };
-
-// class Person {
-//     needs(world) {
-//         const needs = [];
-//         if (this.hunger > 5) {
-//             needs.push('eat');
-//         }
-//         if (this.tiredness > 5 || world.hourOfDay > 20) {
-//             needs.push('sleep'); // how to indicate priority?
-//         }
-//         needs.push('explore');
-//         // if you've found the thing, then add 'escape' to the list
-//     }
-// }
 
 export const landFeatures = {
     mangoTree: {
