@@ -1,4 +1,5 @@
 // hmm this is interesting
+import { dist, diff } from './utils.js';
 
 /*
 
@@ -63,7 +64,7 @@ export const newPerson = (rng, pos) => ({
 // -
 
 export const personNeeds = (world, person) => {
-    console.log('person', person);
+    // console.log('person', person);
     const needs = [];
     if (person.hunger > 5) {
         needs.push({ type: 'eat', weight: person.hunger });
@@ -148,8 +149,11 @@ export const generatePlansForNeed = (world, person, need) => {
             items[key].kinds &&
             items[key].kinds.includes('edible')
         ) {
-            console.log('ok', items[key]);
-            const itemPlans = generatePlansForItem(world, person, items[key]);
+            // console.log('ok', items[key]);
+            const itemPlans = bestPlans(
+                generatePlansForItem(world, person, items[key]),
+            );
+            console.log(key, itemPlans);
             if (itemPlans.length) {
                 const plan = chooseWeighted(
                     world.rng,
@@ -172,8 +176,21 @@ export const generatePlansForNeed = (world, person, need) => {
     return plans;
 };
 
+const bestPlans = (plans) => {
+    if (!plans.length) {
+        return plans;
+    }
+    plans.sort((a, b) => a.cost - b.cost);
+    // return plans.filter(
+    //     (p) => p.cost < Math.max(2 * plans[0].cost, plans[0].cost + 5),
+    // );
+    return plans;
+};
+
 // STOPSHIP
-const movementCost = (world, person, pos) => 1;
+const movementCost = (world, person, pos) => {
+    return dist(diff(person.pos, pos));
+};
 
 /**
  * Plans for how to get this item.
@@ -220,10 +237,8 @@ export const generatePlansForItem = (world, person, item) => {
             // TODO: maybe randomize the order that we go get the things in?
             let steps = [];
             let failed = recipe.items.some((inner) => {
-                const plans = generatePlansForItem(
-                    world,
-                    person,
-                    items[inner.type],
+                const plans = bestPlans(
+                    generatePlansForItem(world, person, items[inner.type]),
                 );
                 if (!plans.length) {
                     return true;
@@ -250,10 +265,15 @@ export const generatePlansForItem = (world, person, item) => {
     // if it can be derived from a landscape (non-movable) item, go to a tile with that item
     if (item.sources) {
         item.sources.forEach((source) => {
-            const plans = generatePlansForLandFeature(
-                world,
-                person,
-                landFeatures[source.type],
+            if (!landFeatures[source.type]) {
+                throw new Error(`Invalid source tile ${source.type}`);
+            }
+            const plans = bestPlans(
+                generatePlansForLandFeature(
+                    world,
+                    person,
+                    landFeatures[source.type],
+                ),
             );
             if (!plans.length) {
                 return;
@@ -296,21 +316,28 @@ export const generatePlansForLandFeature = (world, person, item) => {
     return plans;
 };
 
-export const nextPlan = (world, person) => {
+export const nextPlan = (world, person, narrative) => {
     const needs = personNeeds(world, person);
-    console.log('needs', needs);
+    // console.log('needs', needs);
     const need = chooseWeighted(world.rng, needs);
-    console.log('need', need);
-    const plans = generatePlansForNeed(world, person, need);
-    console.log('plans', plans);
+    // console.log('need', need);
+    const plans = bestPlans(generatePlansForNeed(world, person, need));
+    // console.log('plans', plans);
     if (!plans.length) {
         throw new Error(`No plans!`);
     }
+    console.log(plans);
     const plan = chooseWeighted(
         world.rng,
         plans,
         (plan) => 1 / (plan.cost + 1),
     );
+    narrative.push({
+        type: 'decide',
+        need,
+        plans,
+        chosen: plan,
+    });
     return plan;
 };
 
@@ -403,16 +430,16 @@ export const executePlan = (world, person, plan, narrative) => {
         purpose: plan.purpose,
         narrative: innerNarrative,
     });
-    console.log('>> execute', plan);
+    // console.log('>> execute', plan);
     plan.steps.forEach((step) => {
         if (step.name != null) {
             return executePlan(world, person, step, innerNarrative);
         }
         if (!planSteps[step.type]) {
-            console.log(`>> No way to execute ${step.type}`);
+            console.log(`!!! No way to execute ${step.type}`);
             console.log(step);
         } else {
-            console.log(`>> Executing ${step.type}`);
+            // console.log(`>> Executing ${step.type}`);
             const success = planSteps[step.type](
                 world,
                 person,
@@ -443,14 +470,27 @@ export const executePlan = (world, person, plan, narrative) => {
 export const landFeatures = {
     mangoTree: {
         kinds: ['tree', 'disiduous', 'fruitTree'],
-        locations: [{ type: 'forest', chance: 0.2 }],
+        locations: [{ type: 'trees', chance: 0.1 }],
+        variables: {
+            age: { min: 5, max: 60 },
+        },
     },
     oakTree: {
         kinds: ['tree', 'disiduous'],
-        locations: [{ type: 'forest', min: 3, max: 10 }],
+        locations: [{ type: 'trees', min: 3, max: 10 }],
+        variables: {
+            age: { min: 5, max: 60 },
+        },
     },
     reeds: {
-        location: 'pond',
+        locations: ['pond'],
+    },
+    strawberryPlant: {
+        kinds: ['plant'],
+        locations: [{ type: 'grass', chance: 0.2 }],
+        variables: {
+            radius: { min: 0.5, max: 2 },
+        },
     },
     willow: {
         // location: ['river', 'stream'],
@@ -465,7 +505,21 @@ export const items = {
     mango: {
         kinds: ['edible', 'fruit'],
         caloriesPerPound: 270,
-        source: 'mangoTree',
+        sources: [{ type: 'mangoTree', min: 3, max: 20, offset: 0.1 }],
+        variables: {
+            weightLbs: { min: 0.2, max: 1 },
+            ripeness: { min: 0, max: 1 },
+            orientation: 'angle',
+        },
+    },
+    strawberries: {
+        kinds: ['edible', 'fruit'],
+        sources: [{ type: 'strawberryPlant', min: 3, max: 10, offset: 0.02 }],
+        caloriesPerPound: 270,
+        variables: {
+            weightLbs: { min: 0.01, max: 0.1 },
+            ripeness: { min: 0, max: 1 },
+        },
     },
     // TODO make these "droppables" automatic. e.g.
     // when generating a tile, don't hardcode "oak tree and oak leaves",
@@ -473,15 +527,30 @@ export const items = {
     oakLeaves: {
         kinds: ['kindling'],
         density: 0.2,
+        sources: [{ type: 'oakTree', min: 2, max: 15 }],
+        variables: {
+            volume: { min: 0.5, max: 2.5 },
+        },
     },
     oakTwigs: {
         kinds: ['kindling'],
         density: 0.4,
+        sources: [{ type: 'oakTree', min: 0, max: 3 }],
+        variables: {
+            volume: { min: 0.05, max: 0.2 },
+        },
     },
     oakBranch: {
         density: 0.4,
         kinds: ['firewood', 'stick'],
         burnPerVolume: 50,
+        sources: [{ type: 'oakTree', min: 0, max: 2 }],
+        variables: {
+            orientation: 'angle',
+            strength: { min: 2, max: 10 },
+            length: { min: 6, max: 36 }, // inches
+            width: { min: 0.5, max: 3 },
+        },
     },
     oakBark: {
         kinds: ['bark', 'kindling'],

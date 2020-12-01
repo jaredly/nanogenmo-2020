@@ -67,6 +67,11 @@ const drawItems = {
         ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
     },
+    strawberries: (ctx, item, box) => {
+        ctx.fillStyle = 'red';
+        circle(ctx, boxPos(box, item.pos), (box.w / 10 / 12) * 3);
+        ctx.fill();
+    },
     mango: (ctx, item, box) => {
         ctx.fillStyle = 'orange';
         circle(ctx, boxPos(box, item.pos), (box.w / 10 / 12) * 3);
@@ -91,12 +96,13 @@ const drawItem = (ctx, item, x, y, w, h) => {
     if (drawItems[item.type]) {
         drawItems[item.type](ctx, item, { x, y, w, h });
     } else {
-        console.log('not drawing', item.type);
+        // console.log('not drawing', item.type);
     }
 };
 
 const drawTile = (ctx, tile, x, y, w, h) => {
     ctx.globalAlpha = 0.2;
+    // ctx.globalAlpha = 1;
     ctx.fillStyle = tileColors[tile.type] || 'black';
     ctx.fillRect(x, y, w, h);
     ctx.globalAlpha = 1;
@@ -124,6 +130,15 @@ const draw = (ctx, world) => {
             drawTile(ctx, tile, x * dx, y * dy, dx, dy);
         });
     });
+
+    ctx.fillStyle = 'brown';
+    ctx.globalAlpha = 1;
+    circle(
+        ctx,
+        { x: dx * world.person.pos.x, y: dy * world.person.pos.y },
+        dx / 2,
+    );
+    ctx.fill();
 };
 
 // hmmm I need to condense PLANS too. maybe events should be grouped by the outer plan? idk.
@@ -185,7 +200,16 @@ const constructNarrative = (person, events) => {
 };
 
 const rng = new Prando(123);
-const world = makeWorld(rng, 10, 10);
+// const world = makeWorld(rng, { width: 20, height: 20 });
+const world = makeWorld(rng, {
+    width: 50,
+    height: 50,
+    rivers: 5,
+    trees: 16,
+    rocks: 2,
+    treeSize: 40,
+});
+// const world = makeWorld(rng, 50, 50, );
 
 draw(ctx, world);
 
@@ -197,16 +221,32 @@ console.log('Plan');
 
 const narrative = [];
 
-runWorld(world, narrative);
+const speed = 100;
 
-// console.log(person);
-// console.log(person.narrative.join('\n'));
+const run = () => {
+    runWorld(world, narrative, 1);
+    console.log(world.person.plan);
+    draw(ctx, world);
 
-console.log(narrative);
-window.story.style.whiteSpace = 'pre';
-window.story.textContent = constructNarrative(person, person.narrative).join(
-    '\n',
-);
+    // window.story.style.whiteSpace = 'pre';
+    // window.story.textContent = constructNarrative(world.person, narrative).join(
+    //     '\n',
+    // );
+};
+
+let ival = setInterval(run, speed);
+
+pauseButton.onclick = () => {
+    if (ival) {
+        clearInterval(ival);
+        pauseButton.textContent = 'Play';
+        ival = null;
+    } else {
+        pauseButton.textContent = 'Pause';
+        ival = setInterval(run, speed);
+    }
+};
+
 // window.story.textContent = person.narrative
 //     .map((m) => JSON.stringify(m))
 //     .join('\n');

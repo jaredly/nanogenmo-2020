@@ -2,7 +2,13 @@
 
 import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
 import { addPos } from './utils.js';
-import { newPerson, nextPlan, executePlan } from './logic.js';
+import {
+    newPerson,
+    nextPlan,
+    executePlan,
+    landFeatures,
+    items,
+} from './logic.js';
 import makeGeography from './geography.js';
 
 const randRange = (rng, min, max) => rng.next() * (max - min) + min;
@@ -76,8 +82,8 @@ export const forestTile = (rng) => {
         doit(rng, 0, 2, () =>
             tile.movable.push({
                 type: 'oakBranch',
-                orientation: rng.next() * Math.PI * 2,
                 pos: offsetPos(rng, pos, 0.1),
+                orientation: rng.next() * Math.PI * 2,
                 strength: randRange(rng, 2, 10),
                 length: randRange(rng, 6, 36), // inches
                 width: randRange(rng, 0.5, 3),
@@ -88,15 +94,74 @@ export const forestTile = (rng) => {
     return tile;
 };
 
+const setupVariables = (rng, variables) => {
+    const res = {};
+    Object.keys(variables).forEach((key) => {
+        const v = variables[key];
+        if (v === 'angle') {
+            res[key] = rng.next() * Math.PI * 2;
+        } else if (v.min != null && v.max != null) {
+            res[key] = randRange(rng, v.min, v.max);
+        }
+    });
+    return res;
+};
+
 export const makeWorld = (rng, config) => {
     const world = makeGeography(rng, config);
-    // const world = {
-    //     tiles: geog.tiles,
-    //     width: geog.width,
-    //     height: geog.height,
-    //     person: {},
-    //     rng,
-    // };
+
+    world.tiles.forEach((row, y) =>
+        row.forEach((tile, x) => {
+            // let's generate a landscape!
+            Object.keys(landFeatures).forEach((type) => {
+                const feat = landFeatures[type];
+                const loc = feat.locations.find(
+                    (loc) => loc.type === tile.type,
+                );
+                if (!loc) {
+                    // console.log('no loc', tile.type, feat.locations);
+                    return;
+                }
+                if (loc.chance != null && rng.next() >= loc.chance) {
+                    return;
+                }
+                const num =
+                    loc.min != null && loc.max != null
+                        ? parseInt(randRange(rng, loc.min, loc.max))
+                        : 1;
+                for (let i = 0; i < num; i++) {
+                    const pos = randPos(rng);
+                    tile.landscape.push({
+                        type: feat.type,
+                        pos,
+                        // age: randRange(rng, 5, 60), // feet
+                        ...setupVariables(rng, feat.variables),
+                    });
+                    Object.keys(items).forEach((key) => {
+                        const item = items[key];
+                        if (!item.sources) {
+                            return;
+                        }
+                        const source = item.sources.find(
+                            (s) => s.type === feat.type,
+                        );
+                        if (!source) {
+                            return;
+                        }
+                        const num = randRange(rng, source.min, source.max);
+                        for (let i = 0; i < num; i++) {
+                            const innerPos = offsetPos(rng, pos, source.offset);
+                            tile.movable.push({
+                                pos: innerPos,
+                                type: item.type,
+                                ...setupVariables(rng, item.variables),
+                            });
+                        }
+                    });
+                }
+            });
+        }),
+    );
 
     // for (let y = 0; y < world.height; y++) {
     //     const row = [];
@@ -114,7 +179,7 @@ export const makeWorld = (rng, config) => {
 
 export const runWorld = (world, narrative, iterations = 100) => {
     for (let i = 0; i < iterations; i++) {
-        world.person.plan = nextPlan(world, world.person);
+        world.person.plan = nextPlan(world, world.person, narrative);
         executePlan(world, world.person, world.person.plan, narrative);
         // console.log(person.narrative.join('\n'));
     }
