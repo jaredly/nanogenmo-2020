@@ -56,6 +56,12 @@ export const newPerson = (rng) => ({
     narrative: [],
 });
 
+// Reasons you might die
+// - accident
+// - sickness
+// - exposure
+// -
+
 export const personNeeds = (world, person) => {
     console.log('person', person);
     const needs = [];
@@ -78,22 +84,6 @@ export const timeTick = (world, person, minutes) => {
     person.thirst += minutes / 60;
     person.tiredness += minutes / 60;
 };
-
-// // TODO: have this return a number, indicating "how good" it is at filling the need. so there's
-// // different desirability.
-// // also TODO:
-// export const meedsNeed = (item, need) => {
-//     if (need.type === 'eat') {
-//         // so what I want to do here,
-//         // is have the need be "hunger",
-//         // and instead of a bool here I return
-//         // "a subset of steps".
-//         // like ["obtain mango", "eat mango"]
-//         // and then obtaim mango gets expanded out.
-//         // right?
-//         return item.kinds.includes('edible');
-//     }
-// };
 
 export const generatePlansForNeed = (world, person, need) => {
     const purpose = { type: 'need', need };
