@@ -2,6 +2,7 @@
 
 import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
 import { addPos } from './utils.js';
+import { newPerson, nextPlan, executePlan } from './logic.js';
 
 const randRange = (rng, min, max) => rng.next() * (max - min) + min;
 const chance = (rng, chance) => rng.next() < chance;
@@ -84,4 +85,35 @@ export const forestTile = (rng) => {
     });
 
     return tile;
+};
+
+export const makeWorld = (rng, width, height) => {
+    const world = {
+        tiles: [],
+        width,
+        height,
+        person: {},
+        rng,
+    };
+
+    for (let y = 0; y < world.height; y++) {
+        const row = [];
+        for (let x = 0; x < world.width; x++) {
+            row.push(forestTile(rng));
+        }
+        world.tiles.push(row);
+    }
+    const person = newPerson(world.rng);
+    world.person = person;
+    // person.plan = nextPlan(world, person);
+
+    return world;
+};
+
+export const runWorld = (world, narrative, iterations = 100) => {
+    for (let i = 0; i < iterations; i++) {
+        person.plan = nextPlan(world, world.person);
+        executePlan(world, world.person, world.person.plan, narrative);
+        // console.log(person.narrative.join('\n'));
+    }
 };

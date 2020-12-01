@@ -443,15 +443,18 @@ export const executePlan = (world, person, plan, narrative) => {
 export const landFeatures = {
     mangoTree: {
         kinds: ['tree', 'disiduous', 'fruitTree'],
+        locations: [{ type: 'forest', chance: 0.2 }],
     },
     oakTree: {
         kinds: ['tree', 'disiduous'],
+        locations: [{ type: 'forest', min: 3, max: 10 }],
     },
     reeds: {
         location: 'pond',
     },
     willow: {
-        location: ['river', 'stream'],
+        // location: ['river', 'stream'],
+        locations: [{ type: 'river', chance: 0.1 }],
     },
 };
 Object.keys(landFeatures).forEach((k) => (landFeatures[k].type = k));

@@ -9,29 +9,12 @@ import Prando from 'https://unpkg.com/prando@5.1.2/dist/Prando.es.js';
 // import { wait, goToPos, randomWalk } from './tasks.js';
 // import * as fm from './framework.js';
 // import './logic-world.js';
-import { forestTile } from './logic-world.js';
+import { forestTile, makeWorld, runWorld } from './logic-world.js';
 import { newPerson, nextPlan, executePlan } from './logic.js';
 
 canvas.width = 800;
 canvas.height = 800;
 const ctx = canvas.getContext('2d');
-
-const rng = new Prando(123);
-const world = {
-    tiles: [],
-    width: 10,
-    height: 10,
-    person: {},
-    rng,
-};
-
-for (let y = 0; y < world.height; y++) {
-    const row = [];
-    for (let x = 0; x < world.width; x++) {
-        row.push(forestTile(rng));
-    }
-    world.tiles.push(row);
-}
 
 // thinking of tiles as being like 10 feet square
 
@@ -186,34 +169,24 @@ const constructNarrative = (person, events) => {
     //
 };
 
-// const condenseNarrative = narrative => {
-//     const result = [];
-//     narrative.forEach(item => {
-//         const last = result[result.length - 1]
-//         if (last && last.type === item.type)
-//     })
-// }
+const rng = new Prando(123);
+const world = makeWorld(rng, 10, 10);
 
 draw(ctx, world);
 
 console.log(world);
-const person = newPerson(world.rng);
-person.plan = nextPlan(world, person);
+
+console.log('Plan');
+// console.log(person.plan);
+// executePlan(world, person, person.plan, narrative);
 
 const narrative = [];
 
-console.log('Plan');
-console.log(person.plan);
-executePlan(world, person, person.plan, narrative);
+runWorld(world, narrative);
 
-console.log(person);
+// console.log(person);
 // console.log(person.narrative.join('\n'));
 
-for (let i = 0; i < 100; i++) {
-    person.plan = nextPlan(world, person);
-    executePlan(world, person, person.plan, narrative);
-    // console.log(person.narrative.join('\n'));
-}
 console.log(narrative);
 window.story.style.whiteSpace = 'pre';
 window.story.textContent = constructNarrative(person, person.narrative).join(
