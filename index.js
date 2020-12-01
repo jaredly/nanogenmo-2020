@@ -299,18 +299,26 @@ const describePurpose = (purpose) => {
     }
 };
 
+const MINUTES_IN_DAY = 60 * 24;
+
 const constructNarrative = (person, events) => {
     const text = [];
     const antecedents = {};
     events = condenseEvents(events);
+    let day = -1;
     events.forEach((event, i) => {
+        const thisDay = Math.floor(event.time / MINUTES_IN_DAY);
+        if (thisDay > day) {
+            day = thisDay;
+            text.push(`\n\n\nDay ${day + 1}\n--------\n\n`);
+        }
         if (!narrativeEvents[event.type]) {
             console.log('cant narrate', event);
             return;
         }
         text.push(narrativeEvents[event.type](event, person));
     });
-    return text.join('\n');
+    return text.join(' ');
 
     // things I want to do:
     // keep track of "antecedents". If I've referred to something
@@ -370,9 +378,9 @@ pauseButton.onclick = () => {
         ival = setInterval(run, speed);
     }
 };
-// window.story.textContent = constructNarrative(world.person, narrative);
 runWorld(world, narrative, 1600);
 const full = constructNarrative(world.person, narrative);
+window.story.textContent = full.slice(0, 10000);
 window.full = full;
 // window.dest.value = full
 console.log(full.split(/\s+/g).length);
